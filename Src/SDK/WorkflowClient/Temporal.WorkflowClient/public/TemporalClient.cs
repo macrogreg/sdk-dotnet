@@ -296,7 +296,6 @@ namespace Temporal.WorkflowClient
         private Task ConnectAndValidateAsync(CancellationToken cancelToken)
         {
             // @ToDo: Call server to get capabilities
-
             cancelToken.ThrowIfCancellationRequested();
             IsConnected = true;
             return Task.CompletedTask;

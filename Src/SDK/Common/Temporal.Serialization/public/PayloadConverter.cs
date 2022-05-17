@@ -43,6 +43,7 @@ namespace Temporal.Serialization
             {
                 if (item is PayloadContainers.IUnnamed                  // Wrapped in Container => False
                         || item is PayloadContainers.Enumerable         // Wrapped in Enumerable Container => False
+                        || item is Newtonsoft.Json.Linq.JObject         // Json JObject => False
                         || item is string)                              // String => False
                 {
                     return false;
@@ -70,6 +71,7 @@ namespace Temporal.Serialization
             // If Wrapped in Container => False:
             if (typeof(PayloadContainers.IUnnamed).IsAssignableFrom(checkedType)            // Wrapped in IUnnamed Container => False
                     || typeof(PayloadContainers.Enumerable).IsAssignableFrom(checkedType)   // Wrapped in Enumerable Container => False
+                    || typeof(Newtonsoft.Json.Linq.JObject).IsAssignableFrom(checkedType)   // Json JObject => False
                     || typeof(string).IsAssignableFrom(checkedType))                        // String => False
             {
                 return false;

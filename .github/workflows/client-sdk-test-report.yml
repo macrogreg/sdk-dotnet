@@ -1,0 +1,82 @@
+name: 'Test Report'
+on:
+  workflow_run:
+    workflows: ['CI-Gates']  # runs after CI workflow
+    types:
+      - completed
+    branches:
+      - master
+      - FeatureIntegration
+      - FeatureIntegration/**
+
+jobs:
+
+  report:
+    name: Test Reports (${{matrix.testkind-moniker}}) ${{matrix.os-moniker}}/${{matrix.dotnet-moniker}}/${{matrix.build-config}}
+    #continue-on-error: true
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        testkind-moniker:
+          - Unit
+          - Int
+
+        os-moniker:
+          - 'Win'
+          - 'Linux'
+          - 'MacOS'
+
+        dotnet-moniker:
+          - 'NetCore3.1'
+          - 'Net6'
+          - 'NetFx4.6'
+
+        build-config:
+          - 'Debug'
+          - 'Release'
+
+        exclude:
+          - dotnet-moniker: 'NetFx4.6'
+            os-moniker: 'Linux'
+
+          - dotnet-moniker: 'NetFx4.6'
+            os-moniker: 'MacOS'
+
+        include:
+          - dotnet-moniker: 'NetCore3.1'
+            dotnet-version: '3.1.x'
+            framework: 'netcoreapp3.1'
+
+
+          - dotnet-moniker: 'Net6'
+            dotnet-version: '6.0.x'
+            framework: 'net6.0'
+
+          - dotnet-moniker: 'NetFx4.6'
+            dotnet-version: '4.6.2'
+            framework: 'net462'
+
+          - os-moniker: 'Win'
+            os-specifier: 'windows-latest'
+
+          - os-moniker: 'Linux'
+            os-specifier: 'ubuntu-latest'
+
+          - os-moniker: 'MacOS'
+            os-specifier: 'macos-latest'
+    
+    steps:
+      - name: Generate report (${{matrix.testkind-moniker}}) ${{matrix.os-moniker}}/${{matrix.dotnet-moniker}}/${{matrix.build-config}}
+
+        # Temporarily disable INT tests on non-win until we know how to deploy Temporal Lite:
+        if: ${{ ((matrix.testkind-moniker == 'Int') && (matrix.testkind-moniker == 'Win')) || (matrix.testkind-moniker == 'Unit') }}
+
+        uses: dorny/test-reporter@v1.5.0
+        with:          
+          artifact: TestResults_${{matrix.testkind-moniker}}_${{matrix.os-moniker}}_${{matrix.dotnet-moniker}}_${{matrix.build-config}}
+          name: TestReport ${{matrix.testkind-moniker}} ${{matrix.os-moniker}}/${{matrix.dotnet-moniker}}/${{matrix.build-config}}
+          path: '*.trx'
+          reporter: dotnet-trx
+          max-annotations: '50'      

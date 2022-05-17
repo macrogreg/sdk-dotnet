@@ -5,12 +5,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).Test.Int</_Parameter1>
+    </AssemblyAttribute>
+    
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>$(AssemblyName).Test</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj" />
     <ProjectReference Include="..\Common\Temporal.Sdk.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) == false">
-    <PackageReference Include="Grpc.Net.Client" Version="2.44.0" PrivateAssets="All" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.44.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
   </ItemGroup>

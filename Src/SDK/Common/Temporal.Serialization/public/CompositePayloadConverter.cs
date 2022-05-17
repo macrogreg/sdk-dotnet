@@ -18,6 +18,7 @@ namespace Temporal.Serialization
                 new RawMemoryPayloadConverter(),
                 new UnnamedContainerPayloadConverter(),
                 new ProtobufJsonPayloadConverter(),
+                new ProtobufPayloadConverter(),
                 new NewtonsoftJsonPayloadConverter()
             };
 

@@ -25,7 +25,8 @@ namespace Temporal.Common.Payloads
 
                 public bool TryGetValue<TVal>(int index, out TVal value)
                 {
-                    throw CreateNoSuchIndexException(index);
+                    value = default(TVal);
+                    return false;
                 }
 
                 public IEnumerable<PayloadContainers.UnnamedEntry> Values

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-
 using Temporal.Util;
 using Temporal.Serialization;
 
@@ -119,7 +118,8 @@ namespace Temporal.Common.Payloads
                         return canDeserialize;
                     }
 
-                    throw PayloadContainers.Util.CreateNoSuchIndexException(index, Count, this);
+                    value = default(TVal);
+                    return false;
                 }
 
                 public IEnumerable<PayloadContainers.UnnamedEntry> Values

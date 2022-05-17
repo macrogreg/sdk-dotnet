@@ -45,7 +45,8 @@ namespace Temporal.Common.Payloads
                         return _values[index].TryCast<T, TVal>(out value);
                     }
 
-                    throw PayloadContainers.Util.CreateNoSuchIndexException(index, Count, this);
+                    value = default(TVal);
+                    return false;
                 }
 
                 public Type GetValueType(int index)

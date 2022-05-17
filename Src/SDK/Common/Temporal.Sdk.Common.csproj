@@ -9,17 +9,13 @@
   </ItemGroup>
   
   <ItemGroup>    
-    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Validate.cs"
-             Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
+    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Validate.cs" Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
 
-    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Converter.cs"
-             Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
+    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Converter.cs" Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
 
-    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Format.cs"
-             Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
+    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Format.cs" Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
 
-    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Concurrent.cs"
-             Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
+    <Compile Include="$(SharedSrcBaseDir)\Temporal.Util\internal\Concurrent.cs" Link="$(SharedSrcBaseLabel)\Temporal.Util\internal\%(Filename)%(Extension)" />
   </ItemGroup>
   
   <ItemGroup>

@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    
+    <Import Condition="Exists($([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../')))"
+            Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <SharedTestSrcBaseDir>$(SourceRoot)\Test\Shared</SharedTestSrcBaseDir>
+        <SharedTestSrcBaseLabel>Shared-Test-Src</SharedTestSrcBaseLabel>
+    </PropertyGroup>
+       
+    <PropertyGroup>    
+        <SdkTestSrcBaseDir>$(SourceRoot)\Test\SDK</SdkTestSrcBaseDir>
+        <SdkTestSrcBaseLabel>Sdk-Test-Src</SdkTestSrcBaseLabel>
+    </PropertyGroup>
+    
+    <PropertyGroup>
+        <!--
+        Make sure any documentation comments which are included in code get checked for syntax during the build, but do
+        not report warnings for missing comments.
+        CS1573: Parameter 'parameter' has no matching param tag in the XML comment for 'parameter' (but other parameters do)
+        CS1591: Missing XML comment for publicly visible type or member 'Type_or_Member'
+        CS1712: Type parameter 'type_parameter' has no matching typeparam tag in the XML comment on 'type_or_member' (but other type parameters do)
+        (Note that disabling here might not be sufficient, and the warnings need to ALSO be disabled in .editorconfig)
+        
+        This is also required to allo IDE0005 (Using directive is unnecessary) to be reported at build time. See:
+        https://github.com/dotnet/roslyn/issues/41640
+        https://github.com/dotnet/roslyn/issues/53720
+        -->
+        <GenerateDocumentationFile>True</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1573;1591;1712</NoWarn>
+    </PropertyGroup>
+    
+</Project>
