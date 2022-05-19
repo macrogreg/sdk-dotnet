@@ -280,10 +280,12 @@ namespace Temporal.TestUtil
 
             CoutWriteLine($"Checking for Build Tools Repo under \"{BuildToolsRepoRootDirName}\"...");
             string buildToolsRepoRootPath = Path.Combine(environmentRootDirPath, BuildToolsRepoRootDirName);
-            if (File.Exists(buildToolsRepoRootPath))
+            if (!File.Exists(buildToolsRepoRootPath))
             {
-                throw new Exception($"Build Tools Repo directory does not exist (\"{buildToolsRepoRootPath}\")."
-                                  + $" Did you clone `macrogreg/temporal-dotnet-buildtools`?");
+                string msg = $"Build Tools Repo directory does not exist (\"{buildToolsRepoRootPath}\")."
+                           + $" Did you clone `macrogreg/temporal-dotnet-buildtools`?";
+                CoutWriteLine(msg);
+                throw new Exception(msg);
             }
 
             CoutWriteLine($"Checking for TemporalLite executable archive...");
