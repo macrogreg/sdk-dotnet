@@ -7,22 +7,22 @@ namespace Temporal.TestUtil
 {
     public class IntegrationTestBase : TestBase
     {
-        private const bool RedirectServerOutToCoutDefault = false;
+        private const bool RedirectServerOutToTstoutDefault = false;
 
-        private readonly bool _redirectServerOutToCout;
+        private readonly bool _redirectServerOutToTstout;
         private ITemporalTestServerController _testServer = null;
 
         private readonly TestCaseContextMonikers _testCaseContextMonikers;
 
-        public IntegrationTestBase(ITestOutputHelper cout)
-            : this(cout, RedirectServerOutToCoutDefault)
+        public IntegrationTestBase(ITestOutputHelper tstout)
+            : this(tstout, RedirectServerOutToTstoutDefault)
         {
         }
 
-        public IntegrationTestBase(ITestOutputHelper cout, bool redirectServerOutToCout)
-            : base(cout)
+        public IntegrationTestBase(ITestOutputHelper tstout, bool redirectServerOutToTstout)
+            : base(tstout)
         {
-            _redirectServerOutToCout = redirectServerOutToCout;
+            _redirectServerOutToTstout = redirectServerOutToTstout;
             _testCaseContextMonikers = new TestCaseContextMonikers(System.DateTimeOffset.Now);
         }
 
@@ -43,7 +43,7 @@ namespace Temporal.TestUtil
             // In the future, when we will have other test servers (docker base, remote, ...), we will use some sort of
             // configuration mechanism to decide on the implementation chosen.
 
-            _testServer = new TemporalLiteExeTestServerController(Cout, _redirectServerOutToCout);
+            _testServer = new TemporalLiteExeTestServerController(Tstout, _redirectServerOutToTstout);
             await _testServer.StartAsync();
         }
 

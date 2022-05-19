@@ -26,8 +26,8 @@ namespace Temporal.Sdk.WorkflowClient.Test.Int
         private ITemporalClient _client = null;
         private ExtendedWorkflowServiceClient _wfServiceClient = null;
 
-        public TemporalClientTest(ITestOutputHelper cout)
-            : base(cout)
+        public TemporalClientTest(ITestOutputHelper tstout)
+            : base(tstout)
         {
         }
 

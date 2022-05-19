@@ -7,8 +7,10 @@ using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Temporal.Util;
+
 using Xunit.Abstractions;
+
+using Temporal.Util;
 
 namespace Temporal.TestUtil
 {
@@ -27,16 +29,16 @@ namespace Temporal.TestUtil
                                 = TemporalLiteExeTestServerController.ExeBinarySource.ReleaseBinTemporalLiteRepo;
         }
 
-        private readonly ITestOutputHelper _cout;
-        private readonly bool _redirectServerOutToCout;
+        private readonly ITestOutputHelper _tstout;
+        private readonly bool _redirectServerOutToTstout;
 
         private ProcessManager _temporalLiteProc = null;
 
-        public TemporalLiteExeTestServerController(ITestOutputHelper cout, bool redirectServerOutToCout)
+        public TemporalLiteExeTestServerController(ITestOutputHelper tstout, bool redirectServerOutToTstout)
         {
-            Validate.NotNull(cout);
-            _cout = cout;
-            _redirectServerOutToCout = redirectServerOutToCout;
+            Validate.NotNull(tstout);
+            _tstout = tstout;
+            _redirectServerOutToTstout = redirectServerOutToTstout;
         }
 
         public async Task StartAsync()
@@ -51,17 +53,17 @@ namespace Temporal.TestUtil
             const int TemporalServicePort = 7233;
             if (IsPortInUse(TemporalServicePort))
             {
-                CoutWriteLine();
-                CoutWriteLine($"WARNING!   Something is already listening on local port {TemporalServicePort}."
-                            + $" We will not be able to start TemporalLite."
-                            + Environment.NewLine
-                            + CoutPrefix("WARNING!   However, this is most likely some kind of Temporal server,"
-                                       + " so we will not abort based on this.")
-                            + Environment.NewLine
-                            + CoutPrefix("WARNING!   Take notice of this, as it may affect any test in an unpredictable manner.")
-                            + Environment.NewLine
-                            + CoutPrefix("WARNING!   You may not be running with a test-dedicated TemporalLite instance!"));
-                CoutWriteLine();
+                TstoutWriteLine();
+                TstoutWriteLine($"WARNING!   Something is already listening on local port {TemporalServicePort}."
+                              + $" We will not be able to start TemporalLite."
+                              + Environment.NewLine
+                              + TstoutPrefix("WARNING!   However, this is most likely some kind of Temporal server,"
+                                           + " so we will not abort based on this.")
+                              + Environment.NewLine
+                              + TstoutPrefix("WARNING!   Take notice of this, as it may affect any test in an unpredictable manner.")
+                              + Environment.NewLine
+                              + TstoutPrefix("WARNING!   You may not be running with a test-dedicated TemporalLite instance!"));
+                TstoutWriteLine();
 
                 return;
             }
@@ -99,36 +101,36 @@ namespace Temporal.TestUtil
         {
             const string DownloadedArchiveFileName = "Temporalite.Exe.Distro.zip";
 
-            CoutWriteLine();
-            CoutWriteLine($"TemporalLite executable not found at \"{temporalLiteExePath}\".");
-            CoutWriteLine($"Trying to install ({nameof(Config.ExeBinarySource)}=`{Config.ExeBinarySource}`)...");
-            CoutWriteLine();
+            TstoutWriteLine();
+            TstoutWriteLine($"TemporalLite executable not found at \"{temporalLiteExePath}\".");
+            TstoutWriteLine($"Trying to install ({nameof(Config.ExeBinarySource)}=`{Config.ExeBinarySource}`)...");
+            TstoutWriteLine();
 
             string temporalLiteDirPath = Path.GetDirectoryName(temporalLiteExePath);
             if (Directory.Exists(temporalLiteDirPath))
             {
-                CoutWriteLine($"Destination dir exists ({temporalLiteDirPath}).");
+                TstoutWriteLine($"Destination dir exists ({temporalLiteDirPath}).");
             }
             else
             {
-                CoutWriteLine($"Destination dir does not exist ({temporalLiteDirPath}). Creating...");
+                TstoutWriteLine($"Destination dir does not exist ({temporalLiteDirPath}). Creating...");
                 DirectoryInfo destDir = Directory.CreateDirectory(temporalLiteDirPath);
 
                 if (destDir.Exists)
                 {
-                    CoutWriteLine($"Destination dir successfully created (${temporalLiteDirPath}).");
+                    TstoutWriteLine($"Destination dir successfully created (${temporalLiteDirPath}).");
                 }
                 else
                 {
-                    CoutWriteLine($"Cound not create destination dir (${temporalLiteDirPath}).");
+                    TstoutWriteLine($"Cound not create destination dir (${temporalLiteDirPath}).");
                     throw new Exception($"Cound not create destination dir for TemporalLite (${temporalLiteDirPath}).");
                 }
             }
 
             string releaseBinArchiveUrl = GetReleaseBinArchiveUrl();
             string downloadedArchiveFilePath = Path.Combine(temporalLiteDirPath, DownloadedArchiveFileName);
-            CoutWriteLine($"RuntimeEnvironmentInfo: {RuntimeEnvironmentInfo.SingletonInstance}");
-            CoutWriteLine($"Downloading TemporalLite from \"{releaseBinArchiveUrl}\"...");
+            TstoutWriteLine($"RuntimeEnvironmentInfo: {RuntimeEnvironmentInfo.SingletonInstance}");
+            TstoutWriteLine($"Downloading TemporalLite from \"{releaseBinArchiveUrl}\"...");
 
             long dowloadedFileSize = 0;
             using (FileStream downloadOutStream = new(downloadedArchiveFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
@@ -146,17 +148,17 @@ namespace Temporal.TestUtil
 
             if (dowloadedFileSize < 1024)
             {
-                CoutWriteLine($"Finished downloading TemporalLite distribution archive, but only `{dowloadedFileSize}` bytes were received.");
-                CoutWriteLine($"Most likely the remote file at the specified URL does not exist, or there was a network issue.");
-                CoutWriteLine($"Download URL: \"{releaseBinArchiveUrl}\".");
-                CoutWriteLine($"Downloaded data: \"{downloadedArchiveFilePath}\".");
-                CoutWriteLine($"Giving up.");
+                TstoutWriteLine($"Finished downloading TemporalLite distribution archive, but only `{dowloadedFileSize}` bytes were received.");
+                TstoutWriteLine($"Most likely the remote file at the specified URL does not exist, or there was a network issue.");
+                TstoutWriteLine($"Download URL: \"{releaseBinArchiveUrl}\".");
+                TstoutWriteLine($"Downloaded data: \"{downloadedArchiveFilePath}\".");
+                TstoutWriteLine($"Giving up.");
                 throw new Exception($"Cannot get TemporalLite distribution:"
                                   + $" Only `{dowloadedFileSize}` bytes downloaded from"
                                   + $" \"{releaseBinArchiveUrl}\" to \"{downloadedArchiveFilePath}\".");
             }
 
-            CoutWriteLine($"Finished downloading TemporalLite to \"{downloadedArchiveFilePath}\". Unpacking...");
+            TstoutWriteLine($"Finished downloading TemporalLite to \"{downloadedArchiveFilePath}\". Unpacking...");
 
             using (FileStream unpackInFileStream = new(downloadedArchiveFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (ZipArchive archive = new(unpackInFileStream, ZipArchiveMode.Read, leaveOpen: true))
@@ -164,21 +166,21 @@ namespace Temporal.TestUtil
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
                     string entryTargetFilePath = Path.Combine(temporalLiteDirPath, entry.FullName);
-                    CoutWriteLine($"  - \"{entryTargetFilePath}\".");
+                    TstoutWriteLine($"  - \"{entryTargetFilePath}\".");
                     entry.ExtractToFile(temporalLiteExePath, overwrite: true);
                 }
             }
 
-            CoutWriteLine($"Unpacking completed.");
+            TstoutWriteLine($"Unpacking completed.");
 
             if (File.Exists(temporalLiteExePath))
             {
-                CoutWriteLine($"The expected TemporalLite executable is among the"
+                TstoutWriteLine($"The expected TemporalLite executable is among the"
                             + $" unpacked files ({temporalLiteExePath}).");
             }
             else
             {
-                CoutWriteLine($"The expected TemporalLite executable is NOT among the unpacked"
+                TstoutWriteLine($"The expected TemporalLite executable is NOT among the unpacked"
                             + $" files ({temporalLiteExePath}). Giving up.");
                 throw new Exception($"TemporalLite distributable downloaded and unpacked,"
                                   + $" but the expected TemporalLite executable is NOT among"
@@ -189,23 +191,23 @@ namespace Temporal.TestUtil
                     || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 string temporalLiteExeName = Path.GetFileName(temporalLiteExePath);
-                CoutWriteLine($"Setting eXecutable mode for the TemporalLite binary (\"{temporalLiteExeName}\")...");
+                TstoutWriteLine($"Setting eXecutable mode for the TemporalLite binary (\"{temporalLiteExeName}\")...");
 
                 string escapedTemporalLiteExePath = temporalLiteExePath.Replace("\"", "\\\"");
                 ProcessManager chmod = ProcessManager.Start(exePath: "/bin/bash",
                                                             args: $"-c \"chmod -v +x {escapedTemporalLiteExePath}\"",
                                                             waitForInitOptions: null,
-                                                            redirectToCout: true,
-                                                            coutProcNameMoniker: "bash",
-                                                            _cout);
+                                                            redirectToTstout: true,
+                                                            tstoutProcNameMoniker: "bash",
+                                                            _tstout);
                 chmod.WaitForExit(timeout: 2000);
 
-                CoutWriteLine($"TemporalLite binary set to be eXecutable.");
+                TstoutWriteLine($"TemporalLite binary set to be eXecutable.");
             }
 
-            CoutWriteLine();
-            CoutWriteLine($"TemporalLite has been installed.");
-            CoutWriteLine();
+            TstoutWriteLine();
+            TstoutWriteLine($"TemporalLite has been installed.");
+            TstoutWriteLine();
         }
 
         private string GetReleaseBinArchiveUrl()
@@ -254,8 +256,8 @@ namespace Temporal.TestUtil
                 return ReleaseBinBaseUrl + ReleaseBinArchiveName_MacOS_Arm64;
             }
 
-            CoutWriteLine($"Unexpected OS/Architecture: {RuntimeInformation.OSDescription} / {RuntimeInformation.OSArchitecture}.");
-            CoutWriteLine("Giving up.");
+            TstoutWriteLine($"Unexpected OS/Architecture: {RuntimeInformation.OSDescription} / {RuntimeInformation.OSArchitecture}.");
+            TstoutWriteLine("Giving up.");
             throw new Exception($"Unexpected OS/Architecture: {RuntimeInformation.OSDescription} / {RuntimeInformation.OSArchitecture}.");
 #endif
         }
@@ -270,53 +272,53 @@ namespace Temporal.TestUtil
 
             EnsureRunningWindows();
 
-            CoutWriteLine();
-            CoutWriteLine($"TemporalLite executable not found at \"{temporalLiteExePath}\".");
-            CoutWriteLine($"Trying to install ({nameof(Config.ExeBinarySource)}=`{Config.ExeBinarySource}`)...");
-            CoutWriteLine();
+            TstoutWriteLine();
+            TstoutWriteLine($"TemporalLite executable not found at \"{temporalLiteExePath}\".");
+            TstoutWriteLine($"Trying to install ({nameof(Config.ExeBinarySource)}=`{Config.ExeBinarySource}`)...");
+            TstoutWriteLine();
 
             string environmentRootDirPath = TestEnvironment.GetEnvironmentRootDirPath();
-            CoutWriteLine($"Root of the Test's Environment: \"{environmentRootDirPath}\".");
+            TstoutWriteLine($"Root of the Test's Environment: \"{environmentRootDirPath}\".");
 
-            CoutWriteLine($"Checking for Build Tools Repo under \"{BuildToolsRepoRootDirName}\"...");
+            TstoutWriteLine($"Checking for Build Tools Repo under \"{BuildToolsRepoRootDirName}\"...");
             string buildToolsRepoRootPath = Path.Combine(environmentRootDirPath, BuildToolsRepoRootDirName);
             if (!File.Exists(buildToolsRepoRootPath))
             {
                 string msg = $"Build Tools Repo directory does not exist (\"{buildToolsRepoRootPath}\")."
                            + $" Did you clone `macrogreg/temporal-dotnet-buildtools`?";
-                CoutWriteLine(msg);
+                TstoutWriteLine(msg);
                 throw new Exception(msg);
             }
 
-            CoutWriteLine($"Checking for TemporalLite executable archive...");
+            TstoutWriteLine($"Checking for TemporalLite executable archive...");
 
             string temporalLiteZipFilePath = Path.Combine(buildToolsRepoRootPath, TemporalLiteZipDirName, TemporalLiteZipFileName);
             if (!File.Exists(temporalLiteZipFilePath))
             {
-                CoutWriteLine($"TemporalLite executable archive cannot be found (\"{temporalLiteZipFilePath}\"). Giving up.");
+                TstoutWriteLine($"TemporalLite executable archive cannot be found (\"{temporalLiteZipFilePath}\"). Giving up.");
                 throw new Exception($"Build Tools Repo directory is present, but TemporalLite executable archive cannot"
                                   + $" be found under \"{temporalLiteZipFilePath}\".");
             }
 
-            CoutWriteLine($"Unpacking TemporalLite executable (\"{temporalLiteZipFilePath}\")...");
+            TstoutWriteLine($"Unpacking TemporalLite executable (\"{temporalLiteZipFilePath}\")...");
 
             string temporalLiteDirPath = Path.GetDirectoryName(temporalLiteExePath);
             if (Directory.Exists(temporalLiteDirPath))
             {
-                CoutWriteLine($"Destination dir exists ({temporalLiteDirPath}).");
+                TstoutWriteLine($"Destination dir exists ({temporalLiteDirPath}).");
             }
             else
             {
-                CoutWriteLine($"Destination dir does not exist ({temporalLiteDirPath}). Creating...");
+                TstoutWriteLine($"Destination dir does not exist ({temporalLiteDirPath}). Creating...");
                 DirectoryInfo destDir = Directory.CreateDirectory(temporalLiteDirPath);
 
                 if (destDir.Exists)
                 {
-                    CoutWriteLine($"Destination dir successfully created (${temporalLiteDirPath}).");
+                    TstoutWriteLine($"Destination dir successfully created (${temporalLiteDirPath}).");
                 }
                 else
                 {
-                    CoutWriteLine($"Cound not create destination dir (${temporalLiteDirPath}).");
+                    TstoutWriteLine($"Cound not create destination dir (${temporalLiteDirPath}).");
                     throw new Exception($"Cound not create destination dir for the TemporalLite Exe (${temporalLiteDirPath}).");
                 }
             }
@@ -324,16 +326,16 @@ namespace Temporal.TestUtil
             using FileStream inFStr = new(temporalLiteZipFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             using ZipArchive archive = new(inFStr, ZipArchiveMode.Read);
 
-            CoutWriteLine($"Archive opened. Accessing entry \"{TemporalLiteExeZipEntryName}\".");
+            TstoutWriteLine($"Archive opened. Accessing entry \"{TemporalLiteExeZipEntryName}\".");
             ZipArchiveEntry entry = archive.GetEntry(TemporalLiteExeZipEntryName);
 
-            CoutWriteLine($"Extracting entry to \"{temporalLiteExePath}\"...");
+            TstoutWriteLine($"Extracting entry to \"{temporalLiteExePath}\"...");
             entry.ExtractToFile(temporalLiteExePath, overwrite: false);
 
-            CoutWriteLine($"Extracted.");
-            CoutWriteLine();
-            CoutWriteLine($"TemporalLite has been installed.");
-            CoutWriteLine();
+            TstoutWriteLine($"Extracted.");
+            TstoutWriteLine();
+            TstoutWriteLine($"TemporalLite has been installed.");
+            TstoutWriteLine();
         }
 
         private void Start(string temporalLiteExePath)
@@ -352,11 +354,11 @@ namespace Temporal.TestUtil
                                                          temporalLiteProcArgs,
                                                          new ProcessManager.WaitForInitOptions(TemporalLiteInitCompletedMsg,
                                                                                                TemporalLiteInitTimeoutMillis),
-                                                         _redirectServerOutToCout,
+                                                         _redirectServerOutToTstout,
                                                          "TmprlLt",
-                                                         _cout);
+                                                         _tstout);
 
-                CoutWriteLine($"TemporalLite started (ProcId={_temporalLiteProc.Process.Id}).");
+                TstoutWriteLine($"TemporalLite started (ProcId={_temporalLiteProc.Process.Id}).");
             }
             catch (TimeoutException toEx)
             {
@@ -386,30 +388,30 @@ namespace Temporal.TestUtil
 
             if (temporalLiteProc.Process.HasExited)
             {
-                CoutWriteLine($"TemporalLite was already shut down when Shutdown was actually requested."
-                            + $" Draining output (timeout={KillTimeoutMillis} msec)...");
+                TstoutWriteLine($"TemporalLite was already shut down when Shutdown was actually requested."
+                              + $" Draining output (timeout={KillTimeoutMillis} msec)...");
 
                 temporalLiteProc.DrainOutput(KillTimeoutMillis);
             }
             else
             {
-                CoutWriteLine($"Shutting down TemporalLite (timeout={CtrlCTimeoutMillis} msec)...");
+                TstoutWriteLine($"Shutting down TemporalLite (timeout={CtrlCTimeoutMillis} msec)...");
 
                 if (temporalLiteProc.SendCtrlCAndWaitForExit(CtrlCTimeoutMillis))
                 {
-                    CoutWriteLine($"Successfully shut down TemporalLite.");
+                    TstoutWriteLine($"Successfully shut down TemporalLite.");
                 }
                 else
                 {
-                    CoutWriteLine($"Could not gracefully shut down TemporalLite within the timeout ({KillTimeoutMillis} msec)."
-                                + $" Will kill the process.");
+                    TstoutWriteLine($"Could not gracefully shut down TemporalLite within the timeout ({KillTimeoutMillis} msec)."
+                                  + $" Will kill the process.");
 
                     temporalLiteProc.KillAndWaitForExit(KillTimeoutMillis);
                 }
             }
 
             int elapsedMillis = Environment.TickCount - startMillis;
-            CoutWriteLine($"Shutdown took {elapsedMillis} msec.");
+            TstoutWriteLine($"Shutdown took {elapsedMillis} msec.");
         }
 
         private static void EnsureRunningWindows()
@@ -452,8 +454,8 @@ namespace Temporal.TestUtil
                               + $" {nameof(Config)}.{nameof(Config.ExeBinarySource)}: {Config.ExeBinarySource}."
                               + $" OSDescription: {RuntimeInformation.OSDescription}.";
 
-                CoutWriteLine(errMsg);
-                CoutWriteLine("Giving up.");
+                TstoutWriteLine(errMsg);
+                TstoutWriteLine("Giving up.");
                 throw new Exception(errMsg);
             }
 
@@ -467,20 +469,20 @@ namespace Temporal.TestUtil
             ShutdownAsync().GetAwaiter().GetResult();
         }
 
-        private static string CoutPrefix(string text)
+        private static string TstoutPrefix(string text)
         {
             return (text == null) ? text : ("[TmprlLt Ctrl] " + text);
         }
 
-        private void CoutWriteLine(string text = null)
+        private void TstoutWriteLine(string text = null)
         {
             if (text == null)
             {
-                _cout.WriteLine(String.Empty);
+                _tstout.WriteLine(String.Empty);
             }
             else
             {
-                _cout.WriteLine(CoutPrefix(text));
+                _tstout.WriteLine(TstoutPrefix(text));
             }
         }
 

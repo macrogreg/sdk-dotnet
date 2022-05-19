@@ -10,9 +10,9 @@ namespace Temporal.TestUtil
     internal sealed class ProcessManager : IDisposable
     {
         private readonly Process _process;
-        private readonly bool _redirectToCout;
-        private readonly ITestOutputHelper _cout;
-        private readonly string _coutProcNameMoniker;
+        private readonly bool _redirectToTstout;
+        private readonly ITestOutputHelper _tstout;
+        private readonly string _tstoutProcNameMoniker;
 
         private ManualResetEventSlim _errorSignal = null;
         private ManualResetEventSlim _outputSignal = null;
@@ -24,9 +24,9 @@ namespace Temporal.TestUtil
         public static ProcessManager Start(string exePath,
                                            string args,
                                            WaitForInitOptions waitForInitOptions,
-                                           bool redirectToCout,
-                                           string coutProcNameMoniker,
-                                           ITestOutputHelper cout)
+                                           bool redirectToTstout,
+                                           string tstoutProcNameMoniker,
+                                           ITestOutputHelper tstout)
         {
             Validate.NotNull(exePath);
 
@@ -51,12 +51,12 @@ namespace Temporal.TestUtil
             proc.StartInfo.RedirectStandardError = true;
             proc.StartInfo.RedirectStandardInput = true;
 
-            cout?.WriteLine($"[ProcMan] Starting proc."
-                          + $" (RedirectToCout={redirectToCout};"
-                          + $" File=\"{proc.StartInfo.FileName}\";"
-                          + $" Args={Format.QuoteOrNull(proc.StartInfo.Arguments)})");
+            tstout?.WriteLine($"[ProcMan] Starting proc."
+                            + $" (RedirectToTstout={redirectToTstout};"
+                            + $" File=\"{proc.StartInfo.FileName}\";"
+                            + $" Args={Format.QuoteOrNull(proc.StartInfo.Arguments)})");
 
-            ProcessManager procMan = new(proc, redirectToCout, coutProcNameMoniker, cout);
+            ProcessManager procMan = new(proc, redirectToTstout, tstoutProcNameMoniker, tstout);
 
             ManualResetEventSlim initSignal = null;
             if (waitForInitOptions != null)
@@ -76,23 +76,23 @@ namespace Temporal.TestUtil
             proc.BeginOutputReadLine();
             proc.BeginErrorReadLine();
 
-            cout?.WriteLine($"[ProcMan] Proc `{proc.Id}` started (TS: {Format.AsReadablePreciseLocal(DateTimeOffset.Now)})."
-                          + $" Startup took {(Environment.TickCount - startMillis)} msec so far.");
+            tstout?.WriteLine($"[ProcMan] Proc `{proc.Id}` started (TS: {Format.AsReadablePreciseLocal(DateTimeOffset.Now)})."
+                            + $" Startup took {(Environment.TickCount - startMillis)} msec so far.");
 
             if (initSignal != null)
             {
-                cout?.WriteLine($"[ProcMan] Waiting until init-completed-marker is encountered in the proc output"
-                              + $" (Timeout={waitForInitOptions.TimeoutMillis}ms; Marker=\"{waitForInitOptions.InitCompletedMsg}\").");
+                tstout?.WriteLine($"[ProcMan] Waiting until init-completed-marker is encountered in the proc output"
+                                + $" (Timeout={waitForInitOptions.TimeoutMillis}ms; Marker=\"{waitForInitOptions.InitCompletedMsg}\").");
 
                 bool isInitSignalSet = initSignal.Wait(waitForInitOptions.TimeoutMillis);
                 //bool isInitSignalSet = initSignal.Wait(Timeout.Infinite);  // for debug
                 if (isInitSignalSet)
                 {
-                    cout?.WriteLine($"[ProcMan] InitCompletedMsg was encountered.");
+                    tstout?.WriteLine($"[ProcMan] InitCompletedMsg was encountered.");
                 }
                 else
                 {
-                    cout?.WriteLine($"[ProcMan] InitCompletedMsg was NOT encountered, but timeout was reached.");
+                    tstout?.WriteLine($"[ProcMan] InitCompletedMsg was NOT encountered, but timeout was reached.");
 
                     throw new TimeoutException($"ProcessManager started the target process, but the process did not initialize within the timeout."
                                              + $" File=\"{proc.StartInfo.FileName}\";"
@@ -103,26 +103,26 @@ namespace Temporal.TestUtil
             }
 
             int elapsedMillis = Environment.TickCount - startMillis;
-            cout?.WriteLine($"[ProcMan] Startup & initialization of proc `{proc.Id}` took {elapsedMillis} msec.");
+            tstout?.WriteLine($"[ProcMan] Startup & initialization of proc `{proc.Id}` took {elapsedMillis} msec.");
 
             return procMan;
         }
 
-        private ProcessManager(Process process, bool redirectToCout, string coutProcNameMoniker, ITestOutputHelper cout)
+        private ProcessManager(Process process, bool redirectToTstout, string tstoutProcNameMoniker, ITestOutputHelper tstout)
         {
             Validate.NotNull(process);
 
             _process = process;
-            _redirectToCout = redirectToCout;
+            _redirectToTstout = redirectToTstout;
 
-            if (redirectToCout)
+            if (redirectToTstout)
             {
-                Validate.NotNull(coutProcNameMoniker);
-                Validate.NotNull(cout);
+                Validate.NotNull(tstoutProcNameMoniker);
+                Validate.NotNull(tstout);
             }
 
-            _coutProcNameMoniker = coutProcNameMoniker;
-            _cout = cout;
+            _tstoutProcNameMoniker = tstoutProcNameMoniker;
+            _tstout = tstout;
 
             _process.OutputDataReceived += OnOutputDataReceived;
             _process.ErrorDataReceived += OnErrorDataReceived;
@@ -135,9 +135,9 @@ namespace Temporal.TestUtil
 
         private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (_redirectToCout)
+            if (_redirectToTstout)
             {
-                _cout.WriteLine($"[{_coutProcNameMoniker}:ERR] {e.Data}");
+                _tstout.WriteLine($"[{_tstoutProcNameMoniker}:ERR] {e.Data}");
             }
 
             ManualResetEventSlim signal = _errorSignal;
@@ -149,9 +149,9 @@ namespace Temporal.TestUtil
 
         private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
         {
-            if (_redirectToCout)
+            if (_redirectToTstout)
             {
-                _cout.WriteLine($"[{_coutProcNameMoniker}:STD] {e.Data}");
+                _tstout.WriteLine($"[{_tstoutProcNameMoniker}:STD] {e.Data}");
             }
 
             Action<string> onOutputInspector = _onOutputInspector;
@@ -190,7 +190,7 @@ namespace Temporal.TestUtil
             _process.StandardInput.Flush();
             _process.StandardInput.Close();
 
-            _cout?.WriteLine($"[ProcMan] Sent Ctrl-C to proc `{_process.Id}` (isSucc={isSucc}).");
+            _tstout?.WriteLine($"[ProcMan] Sent Ctrl-C to proc `{_process.Id}` (isSucc={isSucc}).");
         }
 
         public bool SendCtrlCAndWaitForExit(int timeout = Timeout.Infinite)

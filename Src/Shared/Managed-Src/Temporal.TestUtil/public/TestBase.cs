@@ -9,51 +9,59 @@ namespace Temporal.TestUtil
 {
     public class TestBase : IAsyncLifetime, IDisposable
     {
-        private readonly ITestOutputHelper _cout;
+        private readonly ITestOutputHelper _tstout;
         private volatile int _isDisposed = 0;
-        private string _coutWriteLineMoniker = null;
+        private string _tstoutWriteLineMoniker = null;
 
         /// <summary>Prevents subclasses from not passing the required parameters by making the default ctor private.</summary>
         private TestBase()
         {
         }
 
-        protected TestBase(ITestOutputHelper cout)
+        protected TestBase(ITestOutputHelper tstout)
         {
-            Validate.NotNull(cout);
-            _cout = cout;
+            Validate.NotNull(tstout);
+            _tstout = tstout;
 
-            CoutWriteLine($"{this.GetType().Name}: {RuntimeEnvironmentInfo.SingletonInstance}");
+            TstoutWriteLine($"{this.GetType().Name}: {RuntimeEnvironmentInfo.SingletonInstance}");
         }
 
-        public virtual ITestOutputHelper Cout
+        public virtual ITestOutputHelper Tstout
         {
-            get { return _cout; }
+            get { return _tstout; }
         }
 
-        public string CoutWriteLineMoniker
+        public string TstoutWriteLineMoniker
         {
-            get { return _coutWriteLineMoniker; }
-            set { _coutWriteLineMoniker = value; }
+            get { return _tstoutWriteLineMoniker; }
+            set { _tstoutWriteLineMoniker = value; }
         }
 
-        public virtual void CoutWriteLine(string text = null)
+        public virtual string TstoutPrefixLine(string text)
         {
             if (text == null)
             {
-                _cout.WriteLine(String.Empty);
+                return null;
+            }
+
+            string tstoutWriteLineMoniker = TstoutWriteLineMoniker;
+            if (tstoutWriteLineMoniker == null)
+            {
+                return text;
+            }
+
+            return '[' + TstoutWriteLineMoniker + ']' + text;
+        }
+
+        public virtual void TstoutWriteLine(string text = null)
+        {
+            if (text == null)
+            {
+                _tstout.WriteLine(String.Empty);
             }
             else
             {
-                string coutWriteLineMoniker = _coutWriteLineMoniker;
-                if (coutWriteLineMoniker == null)
-                {
-                    _cout.WriteLine(text);
-                }
-                else
-                {
-                    _cout.WriteLine('[' + coutWriteLineMoniker + ']' + text);
-                }
+                _tstout.WriteLine(TstoutPrefixLine(text));
             }
         }
 
@@ -76,9 +84,9 @@ namespace Temporal.TestUtil
         {
             if (isFinalizing)
             {
-                Cout.WriteLine($"{nameof(Dispose)}(..) method was called from the finalizer."
-                             + $" This might indicate a problem with the test setup."
-                             + $" Test class: \"{this.GetType().FullName}\".");
+                Tstout.WriteLine($"{nameof(Dispose)}(..) method was called from the finalizer."
+                               + $" This might indicate a problem with the test setup."
+                               + $" Test class: \"{this.GetType().FullName}\".");
             }
 
             int c = 0;
@@ -88,10 +96,10 @@ namespace Temporal.TestUtil
 
             if (c != 1)
             {
-                Cout.WriteLine($"During {nameof(Dispose)}(..) exactly one of the invoker flags must be True. However, {c} such flags are True:"
-                             + $" isDisposingSync={isDisposingSync}; isDisposingAsync={isDisposingAsync}; isFinalizing={isFinalizing}."
-                             + $" This might indicate a problem with the test setup."
-                             + $" Test class: \"{this.GetType().FullName}\".");
+                Tstout.WriteLine($"During {nameof(Dispose)}(..) exactly one of the invoker flags must be True. However, {c} such flags are True:"
+                               + $" isDisposingSync={isDisposingSync}; isDisposingAsync={isDisposingAsync}; isFinalizing={isFinalizing}."
+                               + $" This might indicate a problem with the test setup."
+                               + $" Test class: \"{this.GetType().FullName}\".");
             }
 
             _isDisposed = 1;
