@@ -11,11 +11,12 @@ namespace Temporal.Sdk.Common.Tests.Serialization
         [Fact]
         public void TryDeserialize_Nullable_Type()
         {
+            const string NullPayloadConverterMetadataEncodingValue = "binary/null";
+
             ByteString bs = null;
             NullPayloadConverter instance = new();
-            ByteString b = PayloadConverter.GetOrCreateBytes(
-                NullPayloadConverter.PayloadMetadataEncodingValue,
-                ref bs);
+            ByteString b = PayloadConverter.GetOrCreateBytes(NullPayloadConverterMetadataEncodingValue,
+                                                             ref bs);
             Payload p = new() { Metadata = { { PayloadConverter.PayloadMetadataEncodingKey, b } } };
             Assert.True(instance.TryDeserialize(
                 new Payloads { Payloads_ = { p }, },

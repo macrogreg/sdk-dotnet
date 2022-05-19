@@ -101,6 +101,10 @@ namespace Temporal.Common.Payloads
                         }
                         catch (Exception ex)
                         {
+                            // The "Try"-pattern contract of this API implies no exceptions. However, so does the 
+                            // downstream call to `TryDeserialize`. We trust the downstream call: It should just
+                            // return true/false. However, if something truly exceptional happens and it throws,
+                            // we enrich that exception a clarifying message and let it bubble up.
                             throw new InvalidOperationException($"Cannot {nameof(TryGetValue)} of type"
                                                               + $" {nameof(TVal)}=\"{typeof(TVal).FullName}\""
                                                               + $" because the {nameof(_payloadConverter)} of type"

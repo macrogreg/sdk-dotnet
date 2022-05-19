@@ -22,6 +22,21 @@ namespace Temporal.Serialization
 
         public abstract bool TrySerialize<T>(T item, Payloads serializedDataAccumulator);
 
+        public void InitDelegates(params IPayloadConverter[] delegateConverters)
+        {
+            if (delegateConverters != null
+                    && delegateConverters.Length == 1
+                    && delegateConverters[0] != null
+                    && delegateConverters[0] is IEnumerable<IPayloadConverter> singleConverter)
+            {
+                InitDelegates(singleConverter);
+            }
+            else
+            {
+                InitDelegates((IEnumerable<IPayloadConverter>) delegateConverters);
+            }
+        }
+
         public virtual void InitDelegates(IEnumerable<IPayloadConverter> delegateConverters)
         {
             Validate.NotNull(delegateConverters);

@@ -77,7 +77,6 @@ namespace Temporal.Sdk.Common.Tests.Serialization
         }
 
         [Fact]
-        // TODO: Determine whether this should successfully roundtrip
         public void ByteArray_Roundtrip()
         {
             Random r = new();
@@ -88,12 +87,6 @@ namespace Temporal.Sdk.Common.Tests.Serialization
             Payloads p = new();
             Assert.False(instance.TrySerialize(buffer, p));
             Assert.False(instance.TryDeserialize(p, out byte[] _));
-            /*Assert.Equal(buffer.Length, actual.Length);
-            foreach (byte b in buffer)
-            {
-                byte read = (byte)actual.ReadByte();
-                Assert.Equal(b, read);
-            }*/
         }
     }
 }

@@ -34,8 +34,6 @@ namespace Temporal.Sdk.Common.Tests.Serialization
         [Fact]
         public void Unnamed_Roundtrip()
         {
-            UnnamedContainerPayloadConverter unnamed = new();
-            unnamed.InitDelegates(new[] { new NewtonsoftJsonPayloadConverter() });
             CompositePayloadConverter instance = new(new IPayloadConverter[]
             {
                 new VoidPayloadConverter(),

@@ -40,7 +40,7 @@ namespace Temporal.Serialization
             {
                 if (_converters[c] is DelegatingPayloadConverterBase delegatingConverter)
                 {
-                    delegatingConverter.InitDelegates(this);
+                    delegatingConverter.InitDelegates((IEnumerable<IPayloadConverter>) this);
                 }
             }
         }
