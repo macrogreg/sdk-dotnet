@@ -1,2 +1,3 @@
 using Xunit;
-[assembly: AssemblyTrait("Category", "Common")]
+[assembly: AssemblyTrait("TestKind", "Unit")]
+[assembly: AssemblyTrait("SdkPackage", "Common")]
