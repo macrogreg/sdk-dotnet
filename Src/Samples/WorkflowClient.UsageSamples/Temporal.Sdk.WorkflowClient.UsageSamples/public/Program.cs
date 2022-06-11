@@ -11,6 +11,7 @@ namespace Temporal.Sdk.WorkflowClient.UsageSamples
 
             (new Part1_SimpleClientUsage()).Run();
             (new Part2_AdvancedClientUsage()).Run();
+            (new Part3_AddressIndividualRuns()).Run();
 
             Console.WriteLine($"\n{typeof(Program).FullName} has finished.\n");
         }

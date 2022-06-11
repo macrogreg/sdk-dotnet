@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SDK\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj" />
-    <ProjectReference Include="..\..\SDK\WorkflowClient\Temporal.Sdk.WorkflowClient.csproj" />
+    <ProjectReference Include="$(SdkSrcBaseDir)\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj" />
+    <ProjectReference Include="$(SdkSrcBaseDir)\WorkflowClient\Temporal.Sdk.WorkflowClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>

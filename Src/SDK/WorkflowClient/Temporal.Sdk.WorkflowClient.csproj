@@ -15,8 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj" />
-    <ProjectReference Include="..\Common\Temporal.Sdk.Common.csproj" />
+    <ProjectReference Include="$(SdkSrcBaseDir)\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj" />
+    <ProjectReference Include="$(SdkSrcBaseDir)\Common\Temporal.Sdk.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) == false">

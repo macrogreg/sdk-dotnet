@@ -246,12 +246,11 @@ Some of the style rules that are currently not automatically enforced due to mis
 
 * Multi-line string layout:
   ```cs
-  SomeApiWithARelativelyLongName.Invocation("Lines should not be too wide; Strings should"
-                                          + " start with aligned quotation marks, and plusses"
-                                          + " should be on the lower line. Spaces should be on"
-                                          + " the lower line. Lorem ipsum dolor sit amet,"
-                                          + " consectetur adipiscing elit, sed do eiusmod"
-                                          + " tempor incididunt ut labore et dolore magna aliqua.");
+  SomeApiWithARelativelyLongName.Invocation("Lines should not be too wide. Strings"
+                                          + " should start with aligned quotation"
+                                          + " marks, and plusses should be on the"
+                                          + " lower line. Spaces should be on the"
+                                          + " lower line.");
   ```
 
 * Parameters should be all on the same line or aligned under each other:
