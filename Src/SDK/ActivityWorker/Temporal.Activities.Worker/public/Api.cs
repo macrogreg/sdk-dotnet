@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Temporal.Common;
@@ -8,7 +9,7 @@ using SerializedPayloads = Temporal.Api.Common.V1.Payloads;
 
 // <summary>
 // This file contains design-phase APIs.
-// We will refactor and implement after the Activity WOrker design is complete.
+// We will refactor and implement after the Activity Worker design is complete.
 // </summary>
 namespace Temporal.Activities.Worker
 {
@@ -278,17 +279,67 @@ namespace Temporal.Activities.Worker
 
     }
 
-    public record RequestingWorkflowInfo(string WorkflowId,
+    /// <summary>
+    /// @ToDo: need to move to "Common" 
+    /// </summary>
+    /// <param name="InitialInterval">Interval of the first retry.
+    /// If retryBackoffCoefficient is 1.0 then it is used for all retries.</param>
+    /// <param name="BackoffCoefficient">Coefficient used to calculate the next retry interval. The next
+    /// retry interval is previous interval multiplied by the coefficient. Must be 1 or larger.</param>
+    /// <param name="MaximumInterval">Maximum interval between retries. Exponential backoff leads to interval
+    /// increase. This value is the cap of the increase. Default is 100x of the initial interval.</param>
+    /// <param name="MaximumAttempts">Maximum number of attempts. When exceeded the retries stop even if not
+    /// expired yet. 1 disables retries. 0 means unlimited (up to the timeouts).</param>
+    /// <param name="NonRetryableErrorTypes">Non-Retryable errors types. Will stop retrying if the error type matches
+    /// this list. Note that this is not a substring match, the error *type* (not message) must match exactly.</param>
+    public record RetryPolicy(TimeSpan InitialInterval,
+                              double BackoffCoefficient,
+                              TimeSpan MaximumInterval,
+                              int MaximumAttempts,
+                              ReadOnlyCollection<string> NonRetryableErrorTypes)
+    {
+    }
+
+    public record RequestingWorkflowInfo(string Namespace,
+                                         string WorkflowId,
                                          string RunId,
                                          string TypeName);
 
+    public record ActivityTimestampInfo(DateTimeOffset Scheduled,
+                                        DateTimeOffset CurrentAttemptScheduled,
+                                        DateTimeOffset Started);
+
+    public record ActivityTimeoutInfo(TimeSpan ScheduleToClose,
+                                      TimeSpan StartToClose,
+                                      TimeSpan Heartbeat);
+
     public interface IWorkflowActivityContext
     {
-        SerializedPayloads Input { get; }
-        IPayloadConverter PayloadConverter { get; }
-        CancellationToken CancelToken { get; }
+        ReadOnlyCollection<byte> ActivityTaskToken { get; }
+
+#if NETCOREAPP3_1_OR_GREATER
+        ReadOnlySpan<byte> ActivityTaskTokenBytes { get; }
+#endif
 
         RequestingWorkflowInfo RequestingWorkflow { get; }
+
+        string ActivityTypeName { get; }
+
+        SerializedPayloads Input { get; }
+        SerializedPayloads HeartbeatDetails { get; }
+        IPayloadConverter PayloadConverter { get; }
+
+        CancellationToken CancelToken { get; }
+
+        ActivityTimestampInfo Times { get; }
+        ActivityTimeoutInfo Timeouts { get; }
+
+        int Attempt { get; }
+
+        RetryPolicy RetryPolicy { get; }
+
+        void RequestHeartbeatRecording();
+        void RequestHeartbeatRecording<TArg>(TArg details);
     }
 
     public interface IActivityImplementation
@@ -379,4 +430,18 @@ namespace Temporal.Activities.Worker
             return _activityCreator();
         }
     }
-}
+}  // namespace Temporal.Activities.Worker
+
+
+namespace Temporal.Common.Payloads2
+{
+    public static partial class PayloadContainers
+    {
+        public interface INamed : IPayload
+        {
+            int Count { get; }
+            TVal GetValue<TVal>(string name);
+            bool TryGetValue<TVal>(int name, out TVal value);
+        }
+    }
+}  // namespace Temporal.Common.Payloads
