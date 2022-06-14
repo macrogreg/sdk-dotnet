@@ -41,11 +41,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scratchpad", "Scratchpad", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temporal.Api.Client.ManagedGrpc", "SDK\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj", "{3C704CCD-3EF6-4768-9BF7-A6B2E844749C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdHocScenarios", "Demos\AdHocScenarios\AdHocScenarios.csproj", "{914A1A6B-4330-4A53-9684-B6A03ADED9E1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temporal.Sdk.Prototypes.WorkflowClientInvocations", "Prototypes\WorkflowClientInvocations\Temporal.Sdk.Prototypes.WorkflowClientInvocations.csproj", "{914A1A6B-4330-4A53-9684-B6A03ADED9E1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SDK", "SDK", "{3244B9EC-46D1-4FDC-888F-6BB3CF2D7793}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{23DB6A06-E0D0-4652-BA36-CB26DE6ABD5F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Prototypes", "Prototypes", "{23DB6A06-E0D0-4652-BA36-CB26DE6ABD5F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{E3E0E0E6-1584-4548-99A8-36EB2AF2D734}"
 EndProject
@@ -89,6 +89,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Doc", "Doc", "{9D4F6D41-EE7
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocFxGenerator", "DocGen\DocFxGenerator.csproj", "{55C0B5EE-2FE8-47BF-A85C-14207D7DD970}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temporal.Sdk.ActivityWorker", "SDK\ActivityWorker\Temporal.Sdk.ActivityWorker.csproj", "{6606E153-1DB2-42CD-BF36-1244596EEF73}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temporal.Sdk.ActivityWorker.UsageSamples", "Samples\ActivityWorker.UsageSamples\Temporal.Sdk.ActivityWorker.UsageSamples.csproj", "{12567716-109E-4172-852E-A415E582AE8D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temporal.Sdk.WorkflowClient.SimpleScenarios", "Samples\WorkflowClient.SimpleScenarios\Temporal.Sdk.WorkflowClient.SimpleScenarios.csproj", "{185913EB-16B0-41FB-9285-0A88AE410542}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +133,18 @@ Global
 		{55C0B5EE-2FE8-47BF-A85C-14207D7DD970}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55C0B5EE-2FE8-47BF-A85C-14207D7DD970}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55C0B5EE-2FE8-47BF-A85C-14207D7DD970}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6606E153-1DB2-42CD-BF36-1244596EEF73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6606E153-1DB2-42CD-BF36-1244596EEF73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6606E153-1DB2-42CD-BF36-1244596EEF73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6606E153-1DB2-42CD-BF36-1244596EEF73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12567716-109E-4172-852E-A415E582AE8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12567716-109E-4172-852E-A415E582AE8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12567716-109E-4172-852E-A415E582AE8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12567716-109E-4172-852E-A415E582AE8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{185913EB-16B0-41FB-9285-0A88AE410542}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{185913EB-16B0-41FB-9285-0A88AE410542}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{185913EB-16B0-41FB-9285-0A88AE410542}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{185913EB-16B0-41FB-9285-0A88AE410542}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -149,6 +167,9 @@ Global
 		{517D116B-34FC-4824-BC0D-B710367C1A47} = {AF4E5CEC-DA7A-4FAE-893E-90693DA97DFE}
 		{E3F286FE-170B-4FB0-B32B-89E2E6493758} = {723CF6E1-998A-4A83-8331-67028EAF0083}
 		{55C0B5EE-2FE8-47BF-A85C-14207D7DD970} = {9D4F6D41-EE7D-4261-B963-B19568A3BBB9}
+		{6606E153-1DB2-42CD-BF36-1244596EEF73} = {3244B9EC-46D1-4FDC-888F-6BB3CF2D7793}
+		{12567716-109E-4172-852E-A415E582AE8D} = {358405B5-48F0-4CFF-8634-4FB0424EBCF5}
+		{185913EB-16B0-41FB-9285-0A88AE410542} = {358405B5-48F0-4CFF-8634-4FB0424EBCF5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E8142887-814F-45CE-9A2D-B4F6E5B752A8}

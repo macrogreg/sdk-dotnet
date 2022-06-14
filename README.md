@@ -29,6 +29,7 @@ Temporal is a programming model for the Cloud that makes writing highly scalable
 See also:
 * Temporal home page: <https://www.temporal.io/>.
 * Temporal central documentation site: <https://docs.temporal.io/>.
+* Temporal SDK for .NET documentation site: <https://dotnet.temporal.io/>.
 
 ## About Temporal SDK for .NET.
 

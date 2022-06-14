@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj" />
+    <ProjectReference Include="$(SdkSrcBaseDir)\Api.Client.ManagedGrpc\Temporal.Api.Client.ManagedGrpc.csproj" />
   </ItemGroup>
   
   <ItemGroup>    
