@@ -299,7 +299,6 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
                 public void Dispose()
                 {
-
                     DisposeAsync().GetAwaiter().GetResult();
                 }
 
