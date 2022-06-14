@@ -15,7 +15,7 @@ namespace Temporal.Common
     public static partial class Payload
     {
         public static readonly IPayload.Void Void = IPayload.Void.Instance;
-        public static readonly Task<IPayload.Void> VoidTask = IPayload.Void.CompletedTask;
+        public static readonly Task<IPayload> VoidTask = Task.FromResult<IPayload>(Payload.Void);
 
         #region Named(..)
 
