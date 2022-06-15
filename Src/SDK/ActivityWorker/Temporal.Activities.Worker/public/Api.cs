@@ -274,9 +274,15 @@ namespace Temporal.Activities.Worker
 
     }
 
-    public class TemporalActivityWorkerConfiguration
+    public record TemporalActivityWorkerConfiguration(string Namespace,                             // namespace
+                                                      string ActivityTaskQueue,                     // task_queue
+                                                      int ConcurrentActivitiesMaxCount,             // max_outstanding_activities (def=100),
+                                                      int ConcurrentActivityPollRequestsMacCount,   // max_concurrent_at_polls (def=5)
+                                                      TimeSpan HeartbeatThrottleIntervalMax,        // max_heartbeat_throttle_interval (def=60sec)
+                                                      TimeSpan HeartbeatThrottleIntervalDefault,    // default_heartbeat_throttle_interval (def=30sec)
+                                                      double ActivityTasksEnqueuedPerSecondMax,        // max_task_queue_activities_per_second (def=??)
+                                                      double ActivityTasksDequeuedPerSecondMax)        // max_worker_activities_per_second (def=??)
     {
-
     }
 
     /// <summary>

@@ -343,7 +343,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
             public static async void ConfigureActivityHost()
             {
-                CustomLogger logger = new("DemoLog.txt");
+                using CustomLogger logger = new("DemoLog.txt");
 
                 TemporalActivityWorker worker = new();
 
@@ -400,7 +400,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
             public static async void ConfigureActivityHost()
             {
-                TemporalActivityWorker worker = new();
+                using TemporalActivityWorker worker = new();
 
                 worker.HostActivity<string>("Log-Error", (msg) => (new CustomLogger2($"DemoLog-{Interlocked.Increment(ref s_logFileIndex)}.txt")).WriteErrorLineAsync(msg))
                       .HostActivity<string>("Log-Info", (msg) => (new CustomLogger2($"DemoLog-{Interlocked.Increment(ref s_logFileIndex)}.txt")).WriteInfoLineAsync(msg));
@@ -429,7 +429,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
             public static async void ConfigureActivityHost()
             {
 
-                TemporalActivityWorker worker = new();
+                using TemporalActivityWorker worker = new();
 
                 // .NET Workflows will be encouraged to use named arguments.
                 // The transport mechanism is a single payload carrying a json object with named properties.
@@ -480,7 +480,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
             {
                 // The SAME activity instance will be used for every invocation:
 
-                TemporalActivityWorker worker1 = new();
+                using TemporalActivityWorker worker1 = new();
 
                 SayHelloActivity activity = new();
                 worker1.HostActivity(activity);                     // Activity-type-name will be "SayHello" (extracted from typeof(SayHelloActivity))
@@ -490,7 +490,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
                 // A NEW activity instance will be used for every invocation:
 
-                TemporalActivityWorker worker2 = new();
+                using TemporalActivityWorker worker2 = new();
 
                 worker2.HostActivity<SayHelloActivity>();           // Activity-type-name will be "SayHello" (extracted from typeof(SayHelloActivity))
 
@@ -540,7 +540,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
             public static async void ConfigureActivityHost()
             {
-                TemporalActivityWorker worker = new();
+                using TemporalActivityWorker worker = new();
 
                 worker.HostActivity<CalculateDistanceActivity>();
 
@@ -554,8 +554,8 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
         }
 
         /// <summary>
-        /// For the heartbeat API we choose a name that EXPLICITLY communicates that the eharbeat may or may not be delivbered immediately.
-        /// This is consistent with the "request cancellation" pattern.
+        /// For the heartbeat API we choose a name that EXPLICITLY communicates that the heartbeat
+        /// may or may not be delivered immediately. This is consistent with the "request cancellation" pattern.
         /// </summary>
         private static class Sample09_Heartbeat
         {
@@ -602,7 +602,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
             public static async void ConfigureActivityHost()
             {
-                TemporalActivityWorker worker = new();
+                using TemporalActivityWorker worker = new();
 
                 worker.HostActivity<int, IList<int>>("CalculatePrimeNumbers", CalculatePrimes);
 
@@ -650,7 +650,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
             public static async void ConfigureActivityHost()
             {
-                TemporalActivityWorker worker = new();
+                using TemporalActivityWorker worker = new();
 
                 // Invoke the action on the thread pool (the action is complete when the task compeltes):
                 worker.HostActivity<int, IList<int>>("CalculatePrimeNumbers", async (n, ctx) => await Task.Run(() => CalculatePrimes(n, ctx)));
@@ -731,7 +731,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
             public static async void ConfigureActivityHost()
             {
-                TemporalActivityWorker worker = new();
+                using TemporalActivityWorker worker = new();
 
                 // Invoke the action on the thread pool (the action is complete when the task compeltes):
                 worker.HostActivity<string>("Do-Something", (datFl, ctx) => (new DoSomethingActivity(ctx)).ExecuteAsync(datFl));
@@ -826,7 +826,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
             public static async void ConfigureActivityHost()
             {
-                TemporalActivityWorker worker = new();
+                using TemporalActivityWorker worker = new();
 
                 // Invoke the action on the thread pool (the action is complete when the task compeltes):
                 worker.HostActivity<string>("Do-Something", DoSomethingAsync);
