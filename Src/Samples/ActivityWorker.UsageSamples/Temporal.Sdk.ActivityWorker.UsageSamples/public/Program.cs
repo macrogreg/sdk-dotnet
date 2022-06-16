@@ -1,16 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Temporal.Activities.Worker;
 using Temporal.Util;
 
-using Temporal.Serialization;
+using Temporal.Common;
 using IUnnamedPayloadContainer = Temporal.Common.Payloads.PayloadContainers.IUnnamed;
 using INamedPayloadContainer = Temporal.Common.Payloads2.PayloadContainers.INamed;  // For Demo only. `...Payloads2...` will be just `...Payloads...` later.
-
-using SerializedPayloads = Temporal.Api.Common.V1.Payloads;
-using System.Collections.Generic;
+using PayloadContainer = Temporal.Common.Payloads2.Payload;
 
 namespace Temporal.Sdk.ActivityWorker.UsageSamples
 {
@@ -49,7 +48,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                 using TemporalActivityWorker worker = new();
 
                 // Add an activity:
-                worker.HostActivity("Say-Hello", (_) => SayHello());
+                worker.RegisterActivity("Say-Hello", (_) => SayHello());
 
                 // Start the worker (the returned task is completed when the worker has started):
                 await worker.StartAsync();
@@ -123,17 +122,17 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
             {
                 using TemporalActivityWorker worker = new();
 
-                worker.HostActivity("Say-Hello", SayHello)
-                      .HostActivity("Say-Hello2", SayHelloWithMetadata)
+                worker.RegisterActivity("Say-Hello", SayHello)
+                      .RegisterActivity("Say-Hello2", SayHelloWithMetadata)
 
-                      .HostActivity<NameData>("Say-Name", SayHelloName)
-                      .HostActivity<NameData>("Say-Name2", SayHelloNameWithMetadata)
+                      .RegisterActivity<NameData>("Say-Name", SayHelloName)
+                      .RegisterActivity<NameData>("Say-Name2", SayHelloNameWithMetadata)
 
-                      .HostActivity("Enter-Word", EnterWord)
-                      .HostActivity("Enter-Word2", EnterWordWithMetadata)
+                      .RegisterActivity("Enter-Word", EnterWord)
+                      .RegisterActivity("Enter-Word2", EnterWordWithMetadata)
 
-                      .HostActivity<NameData, string>("Enter-Word-Name", EnterWordWithName)
-                      .HostActivity<NameData, string>("Enter-Word-Name2", EnterWordWithNameAndMetadata);
+                      .RegisterActivity<NameData, string>("Enter-Word-Name", EnterWordWithName)
+                      .RegisterActivity<NameData, string>("Enter-Word-Name2", EnterWordWithNameAndMetadata);
 
                 await worker.StartAsync();
 
@@ -253,21 +252,21 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                 {
                     using TemporalActivityWorker worker = new();
 
-                    worker.HostActivity("Write-Hello", WriteHelloAsync)
-                          .HostActivity("Write-Hello2", (ctx) => WriteHelloWithCancelAsync(ctx.CancelToken))
-                          .HostActivity("Write-Hello3", WriteHelloWithMetadataAsync)
+                    worker.RegisterActivity("Write-Hello", WriteHelloAsync)
+                          .RegisterActivity("Write-Hello2", (ctx) => WriteHelloWithCancelAsync(ctx.CancelToken))
+                          .RegisterActivity("Write-Hello3", WriteHelloWithMetadataAsync)
 
-                          .HostActivity<NameData>("Write-Name", WriteHelloNameAsync)
-                          .HostActivity<NameData>("Write-Name2", (nm, ctx) => WriteHelloNameWithCancelAsync(nm, ctx.CancelToken))
-                          .HostActivity<NameData>("Write-Name3", WriteHelloNameWithMetadataAsync)
+                          .RegisterActivity<NameData>("Write-Name", WriteHelloNameAsync)
+                          .RegisterActivity<NameData>("Write-Name2", (nm, ctx) => WriteHelloNameWithCancelAsync(nm, ctx.CancelToken))
+                          .RegisterActivity<NameData>("Write-Name3", WriteHelloNameWithMetadataAsync)
 
-                          .HostActivity("Read-Word", ReadWordAsync)
-                          .HostActivity("Read-Word2", (ctx) => ReadWordWithCancelAsync(ctx.CancelToken))
-                          .HostActivity("Read-Word3", ReadWordWithMetadataAsync)
+                          .RegisterActivity("Read-Word", ReadWordAsync)
+                          .RegisterActivity("Read-Word2", (ctx) => ReadWordWithCancelAsync(ctx.CancelToken))
+                          .RegisterActivity("Read-Word3", ReadWordWithMetadataAsync)
 
-                          .HostActivity<NameData, string>("Read-Word-Name", ReadWordWithNameAsync)
-                          .HostActivity<NameData, string>("Read-Word-Name2", (nm, ctx) => ReadWordWithNameAndCancelAsync(nm, ctx.CancelToken))
-                          .HostActivity<NameData, string>("Read-Word-Name3", ReadWordWithNameAndMetadataAsync);
+                          .RegisterActivity<NameData, string>("Read-Word-Name", ReadWordWithNameAsync)
+                          .RegisterActivity<NameData, string>("Read-Word-Name2", (nm, ctx) => ReadWordWithNameAndCancelAsync(nm, ctx.CancelToken))
+                          .RegisterActivity<NameData, string>("Read-Word-Name3", ReadWordWithNameAndMetadataAsync);
 
                     await worker.StartAsync();
 
@@ -347,8 +346,8 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
                 TemporalActivityWorker worker = new();
 
-                worker.HostActivity<string>("Log-Error", logger.WriteErrorLineAsync)
-                      .HostActivity<string>("Log-Info", logger.WriteInfoLineAsync);
+                worker.RegisterActivity<string>("Log-Error", logger.WriteErrorLineAsync)
+                      .RegisterActivity<string>("Log-Info", logger.WriteInfoLineAsync);
 
                 await worker.StartAsync();
 
@@ -402,8 +401,8 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
             {
                 using TemporalActivityWorker worker = new();
 
-                worker.HostActivity<string>("Log-Error", (msg) => (new CustomLogger2($"DemoLog-{Interlocked.Increment(ref s_logFileIndex)}.txt")).WriteErrorLineAsync(msg))
-                      .HostActivity<string>("Log-Info", (msg) => (new CustomLogger2($"DemoLog-{Interlocked.Increment(ref s_logFileIndex)}.txt")).WriteInfoLineAsync(msg));
+                worker.RegisterActivity<string>("Log-Error", (msg) => (new CustomLogger2($"DemoLog-{Interlocked.Increment(ref s_logFileIndex)}.txt")).WriteErrorLineAsync(msg))
+                      .RegisterActivity<string>("Log-Info", (msg) => (new CustomLogger2($"DemoLog-{Interlocked.Increment(ref s_logFileIndex)}.txt")).WriteInfoLineAsync(msg));
 
                 await worker.StartAsync();
 
@@ -434,18 +433,18 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                 // .NET Workflows will be encouraged to use named arguments.
                 // The transport mechanism is a single payload carrying a json object with named properties.
 
-                worker.HostActivity<INamedPayloadContainer, double>("ComputeStuff",
-                                                                    (inp) => ComputeStuffAsync(inp.GetValue<int>("x"),
-                                                                                               inp.GetValue<int>("y"),
-                                                                                               inp.GetValue<int>("z")));
+                worker.RegisterActivity<INamedPayloadContainer, double>("ComputeStuff",
+                                                                        (inp) => ComputeStuffAsync(inp.GetValue<int>("x"),
+                                                                                                   inp.GetValue<int>("y"),
+                                                                                                   inp.GetValue<int>("z")));
 
                 // If the workflow is using multiple payload entries to send multiple arguments, an "unnamed" container
                 // can be used to receive them. Howeever, the "named" approch (above) is preferred.
 
-                worker.HostActivity<IUnnamedPayloadContainer, double>("ComputeStuff2",
-                                                                        (inp) => ComputeStuffAsync(inp.GetValue<int>(0),
-                                                                                                   inp.GetValue<int>(1),
-                                                                                                   inp.GetValue<int>(2)));
+                worker.RegisterActivity<IUnnamedPayloadContainer, double>("ComputeStuff2",
+                                                                          (inp) => ComputeStuffAsync(inp.GetValue<int>(0),
+                                                                                                     inp.GetValue<int>(1),
+                                                                                                     inp.GetValue<int>(2)));
 
                 await worker.StartAsync();
 
@@ -458,48 +457,63 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
         /// <summary>
         /// This sample shows the underlying mechanics of activity hosting. 
-        /// The worker really uses a factory that create a new instance of a class implementing
-        /// <see cref="IActivityImplementation"/> for each activity invocation.
-        /// 
-        /// This is for advanced users only. How shoudl we document this fact?
+        /// Registering the delegate-based activities demonstrated earlier results in automaic creation of an activity factory that
+        /// is actually registered with the worker. For each activity invocation requested by the server, the factory creates a simple
+        /// wrapper activity implementation that actually call through to the user-specified delegate.
+        /// Users can choose to implement such factories themselves.
+        /// There are several advanced scenarios where this may be beneficial. E.g.:
+        ///   - Accociate an activity type name with the implementation rather than the registration.
+        ///   - Scan an assembly and auto-register all activities in it by registering all respective factories.
+        ///   - Easier dependency injection of activity components.
+        ///   - ...
+        /// This example shows a very simple activity registered in a few different ways (see comments below).
         /// </summary>
-        private static class Sample07_UnderlyingMechanicsA
+        private static class Sample07_ActivityFactories
         {
-            public class SayHelloActivity : IActivityImplementation
+            public class SayHelloActivity : IActivityImplementation<IPayload.Void, IPayload.Void>
             {
-                private static readonly Task<SerializedPayloads> s_completedTask = Task.FromResult<SerializedPayloads>(null);
-
-                public Task<SerializedPayloads> ExecuteAsync(IWorkflowActivityContext _)
+                public Task<IPayload.Void> ExecuteAsync(IPayload.Void _, IWorkflowActivityContext __)
                 {
                     Console.WriteLine("Hello World!");
-                    return s_completedTask;
+                    return IPayload.Void.CompletedTask;
                 }
+            }
+
+            public class SayHelloActivityFactory : AutoInstantiatingActivityImplementationFactory<SayHelloActivity, IPayload.Void, IPayload.Void>
+            {
+            }
+
+            public class SayHelloWorldActivityFactory : InstanceSharingActivityImplementationFactory<SayHelloActivity, IPayload.Void, IPayload.Void>
+            {
+                public SayHelloWorldActivityFactory(SayHelloActivity activity) : base(activityTypeName: "SayHelloWorld", sharedActivityImplementation: activity) { }
             }
 
             public static async void ConfigureActivityHost()
             {
                 // The SAME activity instance will be used for every invocation:
+                // (the activity-type-name will be "SayHelloWorld": it is explicitly specified in the implementation of `SayHelloWorldActivityFactory`)
 
                 using TemporalActivityWorker worker1 = new();
 
-                SayHelloActivity activity = new();
-                worker1.HostActivity(activity);                     // Activity-type-name will be "SayHello" (extracted from typeof(SayHelloActivity))
+                SayHelloActivity reusedActivity = new();
+                SayHelloWorldActivityFactory factory1 = new(reusedActivity);
 
-                worker1.HostActivity("SayHi", activity);            // Activity-type-name will be "SayHi" (explicitly specified)
-
+                worker1.RegisterActivity(factory1);
 
                 // A NEW activity instance will be used for every invocation:
 
                 using TemporalActivityWorker worker2 = new();
 
-                worker2.HostActivity<SayHelloActivity>();           // Activity-type-name will be "SayHello" (extracted from typeof(SayHelloActivity))
+                worker2.RegisterActivity(new SayHelloActivityFactory());            // (the activity-type-name will be "SayHello": it is extracted from the type name
+                                                                                    // `SayHelloActivity` which is a type parameter passed from SayHelloActivityFactory to its base)
 
-                worker2.HostActivity<SayHelloActivity>("SayHi");    // Activity-type-name wil be "SayHi" (explicitly specified)
+                worker2.RegisterActivity("SayHi", new SayHelloActivityFactory());   // (the activity-type-name will be "SayHi": the default providd by the factory is overwritted
+                                                                                    // during registration)
 
                 await Task.WhenAll(worker1.StartAsync(),
                                    worker2.StartAsync());
 
-                Console.WriteLine($"{nameof(Sample07_UnderlyingMechanicsA)}: Workers started. Press enter to terminate.");
+                Console.WriteLine($"{nameof(Sample07_ActivityFactories)}: Workers started. Press enter to terminate.");
                 Console.ReadLine();
 
                 await Task.WhenAll(worker1.TerminateAsync(),
@@ -508,26 +522,27 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
         }
 
         /// <summary>
-        /// This sample shows the underlying mechanics of serialization and accessign the underlying payload.        
+        /// This example also uses an explicit activity implementation instead of a delegate-based implementation.
+        /// It shows how an actual business logic implementation can be adapred to the recommented pattern of always using named payloads,
+        /// without the overhead of creating new data transport types.
         /// 
-        /// This is for advanced users only. How shoudl we document this fact?
+        /// Note that in this example the activity implementation instance can be reused becasue it does not have local state.
         /// </summary>
-        private static class Sample08_UnderlyingMechanicsB
+        private static class Sample08_AdaptingMultipleArgsToNamedPayloads
         {
-            public class CalculateDistanceActivity : IActivityImplementation
+            public class CalculateDistanceActivity : IActivityImplementation<INamedPayloadContainer, INamedPayloadContainer>
             {
-                public Task<SerializedPayloads> ExecuteAsync(IWorkflowActivityContext activityCtx)
+                public class Factory : InstanceSharingActivityImplementationFactory<CalculateDistanceActivity, INamedPayloadContainer, INamedPayloadContainer>
                 {
-                    SerializedPayloads serializedInput = activityCtx.Input;
-                    INamedPayloadContainer input = activityCtx.PayloadConverter.Deserialize<INamedPayloadContainer>(serializedInput);
+                    public Factory() : base(new CalculateDistanceActivity()) { }
+                }
 
+                public Task<INamedPayloadContainer> ExecuteAsync(INamedPayloadContainer input, IWorkflowActivityContext activityCtx)
+                {
                     double dist = CalculateDistance(input.GetValue<double>("X1"), input.GetValue<double>("Y1"),
                                                     input.GetValue<double>("X2"), input.GetValue<double>("Y2"));
 
-                    SerializedPayloads serializedOutputAccumulator = new();
-                    activityCtx.PayloadConverter.Serialize<double>(dist, serializedOutputAccumulator);
-
-                    return Task.FromResult(serializedOutputAccumulator);
+                    return Task.FromResult(PayloadContainer.Named("Distance", dist));
                 }
 
                 public double CalculateDistance(double x1, double y1, double x2, double y2)
@@ -542,11 +557,11 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
             {
                 using TemporalActivityWorker worker = new();
 
-                worker.HostActivity<CalculateDistanceActivity>();
+                worker.RegisterActivity(new CalculateDistanceActivity.Factory());
 
                 await worker.StartAsync();
 
-                Console.WriteLine($"{nameof(Sample08_UnderlyingMechanicsB)}: Worker started. Press enter to terminate.");
+                Console.WriteLine($"{nameof(Sample08_AdaptingMultipleArgsToNamedPayloads)}: Worker started. Press enter to terminate.");
                 Console.ReadLine();
 
                 await worker.TerminateAsync();
@@ -594,7 +609,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                         primes.Add(n);
                     }
 
-                    activityCtx.RequestHeartbeatRecording(n);  // Record heartbeat
+                    activityCtx.RequestHeartbeatRecording(n);  // Attempt (?) Record heartbeat
                 }
 
                 return primes;
@@ -604,7 +619,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
             {
                 using TemporalActivityWorker worker = new();
 
-                worker.HostActivity<int, IList<int>>("CalculatePrimeNumbers", CalculatePrimes);
+                worker.RegisterActivity<int, IList<int>>("CalculatePrimeNumbers", CalculatePrimes);
 
                 await worker.StartAsync();
 
@@ -653,7 +668,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                 using TemporalActivityWorker worker = new();
 
                 // Invoke the action on the thread pool (the action is complete when the task compeltes):
-                worker.HostActivity<int, IList<int>>("CalculatePrimeNumbers", async (n, ctx) => await Task.Run(() => CalculatePrimes(n, ctx)));
+                worker.RegisterActivity<int, IList<int>>("CalculatePrimeNumbers", async (n, ctx) => await Task.Run(() => CalculatePrimes(n, ctx)));
 
                 await worker.StartAsync();
 
@@ -734,7 +749,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                 using TemporalActivityWorker worker = new();
 
                 // Invoke the action on the thread pool (the action is complete when the task compeltes):
-                worker.HostActivity<string>("Do-Something", (datFl, ctx) => (new DoSomethingActivity(ctx)).ExecuteAsync(datFl));
+                worker.RegisterActivity<string>("Do-Something", (datFl, ctx) => (new DoSomethingActivity(ctx)).ExecuteAsync(datFl));
 
                 await worker.StartAsync();
 
@@ -829,7 +844,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                 using TemporalActivityWorker worker = new();
 
                 // Invoke the action on the thread pool (the action is complete when the task compeltes):
-                worker.HostActivity<string>("Do-Something", DoSomethingAsync);
+                worker.RegisterActivity<string>("Do-Something", DoSomethingAsync);
 
                 await worker.StartAsync();
 
