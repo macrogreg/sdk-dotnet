@@ -3,16 +3,57 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Temporal.Activities.Worker;
 using Temporal.Util;
 
 using Temporal.Common;
 using IUnnamedPayloadContainer = Temporal.Common.Payloads.PayloadContainers.IUnnamed;
 using INamedPayloadContainer = Temporal.Common.Payloads2.PayloadContainers.INamed;  // For Demo only. `...Payloads2...` will be just `...Payloads...` later.
 using PayloadContainer = Temporal.Common.Payloads2.Payload;
+using Temporal.Worker.Hosting;
 
 namespace Temporal.Sdk.ActivityWorker.UsageSamples
 {
+    /// <summary>
+    /// ToDo: Things not YET covered in this spec:
+    /// 
+    /// * Worker options / worker creation settings:
+    ///   - Connection options
+    ///   - TLS
+    ///   - Client
+    ///   - Worker level options (Temporal behavior)
+    ///   
+    /// * Interceptors
+    /// 
+    /// * Serialzation config
+    /// 
+    /// * Fatal error handling
+    /// 
+    /// ----------- ----------- ----------- ----------- -----------
+    /// 
+    /// Note about invoking activities from workflows:
+    /// 
+    /// Invoking activities from workflows is explicitly NOT in scope of this spec.
+    /// Here, I outline a very high level approach just to provide context.
+    /// The details of this will NOT be dicussed while reviewing the activity implementation SDK scope.
+    /// 
+    /// Unlike Java, the workflow implementation will NOT use ifaces to invoke activities.
+    /// Instead, we will generate classes using source generators
+    /// [e.g. see https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview,
+    /// https://github.com/dotnet/roslyn/blob/main/docs/features/source-generators.cookbook.md].
+    /// 
+    /// The user will need to write something like:
+    /// ```cs
+    /// [TemporalActivityStub(ImplementationMethod = Namespace.Type.Method)]
+    /// internal partial class MyActivity : IActivityStub
+    /// {
+    /// }
+    /// ```
+    /// 
+    /// For this, `Namespace.Type.Method` must be in an accessible assembly.
+    /// We will generate the "rest" of `MyActivity` and add it to the project.
+    /// 
+    /// An alternative will be a name/string based API similar to what is already implemented for the workflow client.
+    /// </summary>
     public class Program
     {
         public static void Main(string[] _)
@@ -431,6 +472,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                 using TemporalActivityWorker worker = new();
 
                 // .NET Workflows will be encouraged to use named arguments.
+                // (Single argument-orject with names properties)
                 // The transport mechanism is a single payload carrying a json object with named properties.
 
                 worker.RegisterActivity<INamedPayloadContainer, double>("ComputeStuff",
@@ -438,8 +480,10 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                                                                                                    inp.GetValue<int>("y"),
                                                                                                    inp.GetValue<int>("z")));
 
-                // If the workflow is using multiple payload entries to send multiple arguments, an "unnamed" container
-                // can be used to receive them. Howeever, the "named" approch (above) is preferred.
+                // .NET Workflows will be encouraged to use named arguments.
+                // (Single argument-orject with names properties)
+                // If a workflow is nevertheless using multiple payload entries to send multiple arguments (other lang?),
+                // an "unnamed" container can be used to receive them. However, the "named" approch (above) is preferred.
 
                 worker.RegisterActivity<IUnnamedPayloadContainer, double>("ComputeStuff2",
                                                                           (inp) => ComputeStuffAsync(inp.GetValue<int>(0),
@@ -523,8 +567,11 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
         /// <summary>
         /// This example also uses an explicit activity implementation instead of a delegate-based implementation.
-        /// It shows how an actual business logic implementation can be adapred to the recommented pattern of always using named payloads,
-        /// without the overhead of creating new data transport types.
+        /// It shows how an actual business logic implementation can be adapred to the recommented pattern of always
+        /// using named payloads, without the overhead of creating new data transport types.
+        /// Note: we highly encourage users to use single argument-object with named properties for both, input and return
+        /// types. However, people still may need to use activity implementations that do not follow this guidance.
+        /// This example demonstrates an adapter pattern.
         /// 
         /// Note that in this example the activity implementation instance can be reused becasue it does not have local state.
         /// </summary>
@@ -609,7 +656,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                         primes.Add(n);
                     }
 
-                    activityCtx.RequestHeartbeatRecording(n);  // Attempt (?) Record heartbeat
+                    activityCtx.RequestRecordHeartbeat(n);  // Attempt (?) Record heartbeat
                 }
 
                 return primes;
@@ -657,7 +704,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
 
                     // In previous examples we passed arguments to `RequestHeartbeatRecording`.
                     // However, that is optional:
-                    activityCtx.RequestHeartbeatRecording();
+                    activityCtx.RequestRecordHeartbeat();
                 }
 
                 return primes;
@@ -723,7 +770,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                             data.Add(buff[i]);
                         }
 
-                        _activityCtx.RequestHeartbeatRecording();
+                        _activityCtx.RequestRecordHeartbeat();
                         readBytes = await fs.ReadAsync(buff, 0, buff.Length, _activityCtx.CancelToken);
                     }
 
@@ -819,7 +866,7 @@ namespace Temporal.Sdk.ActivityWorker.UsageSamples
                         data.Add(buff[i]);
                     }
 
-                    WorkflowActivityContexts.DoSomething.RequestHeartbeatRecording();
+                    WorkflowActivityContexts.DoSomething.RequestRecordHeartbeat();
                     readBytes = await fs.ReadAsync(buff, 0, buff.Length, WorkflowActivityContexts.DoSomething.CancelToken);
                 }
 

@@ -12,7 +12,7 @@ using SerializedPayloads = Temporal.Api.Common.V1.Payloads;
 // This file contains design-phase APIs.
 // We will refactor and implement after the Activity Worker design is complete.
 // </summary>
-namespace Temporal.Activities.Worker
+namespace Temporal.Worker.Hosting
 {
     public static class Api
     {
@@ -301,14 +301,27 @@ namespace Temporal.Activities.Worker
 
     }
 
-    public record TemporalActivityWorkerConfiguration(string Namespace,                             // namespace
-                                                      string ActivityTaskQueue,                     // task_queue
-                                                      int ConcurrentActivitiesMaxCount,             // max_outstanding_activities (def=100),
-                                                      int ConcurrentActivityPollRequestsMacCount,   // max_concurrent_at_polls (def=5)
-                                                      TimeSpan HeartbeatThrottleIntervalMax,        // max_heartbeat_throttle_interval (def=60sec)
-                                                      TimeSpan HeartbeatThrottleIntervalDefault,    // default_heartbeat_throttle_interval (def=30sec)
-                                                      double ActivityTasksEnqueuedPerSecondMax,        // max_task_queue_activities_per_second (def=??)
-                                                      double ActivityTasksDequeuedPerSecondMax)        // max_worker_activities_per_second (def=??)
+    public record ActivityInvocationPipelineItemFactoryArguments(string ActivityTypeName,
+                                                                 object ActivityImplementationFactory)
+    {
+    }
+
+    public interface ITemporalActivityInterceptor
+    {
+    }
+
+    public record TemporalActivityWorkerConfiguration(
+            string Namespace,                             // namespace
+            string ActivityTaskQueue,                     // task_queue
+            int ConcurrentActivitiesMaxCount,             // max_outstanding_activities (def=100),
+            int ConcurrentActivityPollRequestsMacCount,   // max_concurrent_at_polls (def=5)
+            TimeSpan HeartbeatThrottleIntervalMax,        // max_heartbeat_throttle_interval (def=60sec)
+            TimeSpan HeartbeatThrottleIntervalDefault,    // default_heartbeat_throttle_interval (def=30sec)
+            double ActivityTasksEnqueuedPerSecondMax,     // max_task_queue_activities_per_second (def=??)
+            double ActivityTasksDequeuedPerSecondMax,     // max_worker_activities_per_second (def=??)
+            Func<ActivityInvocationPipelineItemFactoryArguments, IPayloadConverter> PayloadConverterFactory,
+            Func<ActivityInvocationPipelineItemFactoryArguments, IPayloadCodec> PayloadCodecFactory,
+            Action<ActivityInvocationPipelineItemFactoryArguments, IList<ITemporalActivityInterceptor>> ActivityInterceptorFactory)
     {
     }
 
@@ -358,9 +371,7 @@ namespace Temporal.Activities.Worker
 
         string ActivityTypeName { get; }
 
-        SerializedPayloads Input { get; }
-        SerializedPayloads HeartbeatDetails { get; }
-        IPayloadConverter PayloadConverter { get; }
+        TDets GetLastAttemptHeartbeatDetails<TDets>();
 
         CancellationToken CancelToken { get; }
 
@@ -371,14 +382,16 @@ namespace Temporal.Activities.Worker
 
         RetryPolicy RetryPolicy { get; }
 
-        void RequestHeartbeatRecording();
-        void RequestHeartbeatRecording<TArg>(TArg details);
+        void RequestRecordHeartbeat();      // (?) SubmitHeartbeat() ? EnqueueHeartbeat() ?
+        void RequestRecordHeartbeat<TArg>(TArg details);
     }
 
     internal interface IActivityExecutor
     {
         string ActivityTypeName { get; }
-        Task<SerializedPayloads> CreateAndExecuteAsync(SerializedPayloads input, IWorkflowActivityContext activityCtx);
+        Task<SerializedPayloads> CreateAndExecuteAsync(SerializedPayloads input,
+                                                       IWorkflowActivityContext activityCtx,
+                                                       TemporalActivityWorkerConfiguration workerConfig);
     }
 
     internal class ActivityExecutor<TArg, TResult> : IActivityExecutor
@@ -396,20 +409,56 @@ namespace Temporal.Activities.Worker
         public string ActivityTypeName { get { return _activityTypeName; } }
 
         public async Task<SerializedPayloads> CreateAndExecuteAsync(SerializedPayloads serializedInput,
-                                                                    IWorkflowActivityContext activityCtx)
+                                                                    IWorkflowActivityContext activityCtx,
+                                                                    TemporalActivityWorkerConfiguration workerConfig)
         {
             // POC. In reality here we will probably construct IWorkflowActivityContext from a worker context. 
+            // Invocation paths will be different.
 
             IActivityImplementation<TArg, TResult> activity = _activityFactory.CreateActivity();
 
-            TArg input = activityCtx.PayloadConverter.Deserialize<TArg>(serializedInput);
+            IPayloadConverter payloadConverter = CreatePayloadConverter(workerConfig);
+            IPayloadCodec payloadCodec = CreatePayloadCodec(workerConfig);
+
+            TArg input = await payloadConverter.DeserializeAsync<TArg>(payloadCodec, serializedInput, activityCtx.CancelToken);
 
             TResult output = await activity.ExecuteAsync(input, activityCtx);
 
-            SerializedPayloads serializedOutputAccumulator = new();
-            activityCtx.PayloadConverter.Serialize<TResult>(output, serializedOutputAccumulator);
+            SerializedPayloads serializedOutput = await payloadConverter.SerializeAsync(payloadCodec, output, activityCtx.CancelToken);
+            return serializedOutput;
+        }
 
-            return serializedOutputAccumulator;
+        private IPayloadConverter CreatePayloadConverter(TemporalActivityWorkerConfiguration workerConfig)
+        {
+            IPayloadConverter payloadConverter = null;
+            Func<ActivityInvocationPipelineItemFactoryArguments, IPayloadConverter> customPayloadConverterFactory
+                                                                                                = workerConfig.PayloadConverterFactory;
+            if (customPayloadConverterFactory != null)
+            {
+                ActivityInvocationPipelineItemFactoryArguments converterFactoryArguments = new(_activityTypeName, _activityFactory);
+                payloadConverter = customPayloadConverterFactory(converterFactoryArguments);
+            }
+
+            if (payloadConverter == null)
+            {
+                payloadConverter = new CompositePayloadConverter();
+            }
+
+            return payloadConverter;
+        }
+
+        private IPayloadCodec CreatePayloadCodec(TemporalActivityWorkerConfiguration workerConfig)
+        {
+            IPayloadCodec payloadCodec = null;
+            Func<ActivityInvocationPipelineItemFactoryArguments, IPayloadCodec> customPayloadCodecFactory
+                                                                                                = workerConfig.PayloadCodecFactory;
+            if (customPayloadCodecFactory != null)
+            {
+                ActivityInvocationPipelineItemFactoryArguments codecFactoryArguments = new(_activityTypeName, _activityFactory);
+                payloadCodec = customPayloadCodecFactory(codecFactoryArguments);
+            }
+
+            return payloadCodec;
         }
     }
 
@@ -613,7 +662,7 @@ namespace Temporal.Activities.Worker
             return false;
         }
     }
-}  // namespace Temporal.Activities.Worker
+}  // Temporal.Worker.Hosting
 
 
 namespace Temporal.Common.Payloads2
