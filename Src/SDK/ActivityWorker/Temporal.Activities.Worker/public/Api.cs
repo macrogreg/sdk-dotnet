@@ -67,18 +67,20 @@ namespace Temporal.Worker.Hosting
                                                                        string activityTypeName,
                                                                        Func<Task<TResult>> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<IPayload.Void, TResult>(
-                    activityTypeName,
-                    (_, __) => activity()));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<IPayload.Void, TResult>(
+                            activityTypeName,
+                            (_, __) => activity()));
         }
 
         public static TemporalActivityWorker RegisterActivity<TArg, TResult>(this TemporalActivityWorker worker,
                                                                              string activityTypeName,
                                                                              Func<IWorkflowActivityContext, Task<TResult>> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, TResult>(
-                    activityTypeName,
-                    (_, ctx) => activity(ctx)));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, TResult>(
+                            activityTypeName,
+                            (_, ctx) => activity(ctx)));
         }
 
         #endregion RegisterActivity takes `Func<.., Task<TResult>>` with 0 inputs
@@ -89,18 +91,20 @@ namespace Temporal.Worker.Hosting
                                                                              string activityTypeName,
                                                                              Func<TArg, Task<TResult>> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, TResult>(
-                    activityTypeName,
-                    (inp, _) => activity(inp)));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, TResult>(
+                            activityTypeName,
+                            (inp, _) => activity(inp)));
         }
 
         public static TemporalActivityWorker RegisterActivity<TArg, TResult>(this TemporalActivityWorker worker,
                                                                              string activityTypeName,
                                                                              Func<TArg, IWorkflowActivityContext, Task<TResult>> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, TResult>(
-                    activityTypeName,
-                    (inp, ctx) => activity(inp, ctx)));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, TResult>(
+                            activityTypeName,
+                            (inp, ctx) => activity(inp, ctx)));
         }
 
         #endregion RegisterActivity takes `Func<.., Task<TResult>>` with 1 input
@@ -111,26 +115,28 @@ namespace Temporal.Worker.Hosting
                                                               string activityTypeName,
                                                               Func<Task> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<IPayload.Void, IPayload.Void>(
-                    activityTypeName,
-                    async (_, __) =>
-                    {
-                        await activity();
-                        return IPayload.Void.Instance;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<IPayload.Void, IPayload.Void>(
+                            activityTypeName,
+                            async (_, __) =>
+                            {
+                                await activity();
+                                return IPayload.Void.Instance;
+                            }));
         }
 
         public static TemporalActivityWorker RegisterActivity(this TemporalActivityWorker worker,
                                                               string activityTypeName,
                                                               Func<IWorkflowActivityContext, Task> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<IPayload.Void, IPayload.Void>(
-                    activityTypeName,
-                    async (_, ctx) =>
-                    {
-                        await activity(ctx);
-                        return IPayload.Void.Instance;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<IPayload.Void, IPayload.Void>(
+                            activityTypeName,
+                            async (_, ctx) =>
+                            {
+                                await activity(ctx);
+                                return IPayload.Void.Instance;
+                            }));
         }
 
         #endregion RegisterActivity takes async `Func<.., Task>` with 0 inputs (Task is NOT Task<TResult>)
@@ -141,26 +147,28 @@ namespace Temporal.Worker.Hosting
                                                                     string activityTypeName,
                                                                     Func<TArg, Task> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, IPayload.Void>(
-                    activityTypeName,
-                    async (inp, _) =>
-                    {
-                        await activity(inp);
-                        return IPayload.Void.Instance;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, IPayload.Void>(
+                            activityTypeName,
+                            async (inp, _) =>
+                            {
+                                await activity(inp);
+                                return IPayload.Void.Instance;
+                            }));
         }
 
         public static TemporalActivityWorker RegisterActivity<TArg>(this TemporalActivityWorker worker,
                                                                     string activityTypeName,
                                                                     Func<TArg, IWorkflowActivityContext, Task> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, IPayload.Void>(
-                    activityTypeName,
-                    async (inp, ctx) =>
-                    {
-                        await activity(inp, ctx);
-                        return IPayload.Void.Instance;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, IPayload.Void>(
+                            activityTypeName,
+                            async (inp, ctx) =>
+                            {
+                                await activity(inp, ctx);
+                                return IPayload.Void.Instance;
+                            }));
         }
 
         #endregion RegisterActivity takes async `Func<.., Task>` with 1 input (Task is NOT Task<TResult>)
@@ -185,26 +193,34 @@ namespace Temporal.Worker.Hosting
                                           + $" () => (IActivityImplementation<TArg, TRes>) (new SayHelloActivity()))`.");
             }
 
-            return worker.RegisterActivity(ActivityFactory.Create<IPayload.Void, TResult>(
-                    activityTypeName,
-                    (_, __) =>
-                    {
-                        TResult r = activity();
-                        return Task.FromResult(r);
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<IPayload.Void, TResult>(
+                            activityTypeName,
+                            (_, __) =>
+                            {
+                                TResult r = activity();
+
+                                if (r is Task<TResult> taskRes)
+                                {
+                                    return taskRes;
+                                }
+
+                                return Task.FromResult(r);
+                            }));
         }
 
         public static TemporalActivityWorker RegisterActivity<TResult>(this TemporalActivityWorker worker,
                                                                        string activityTypeName,
                                                                        Func<IWorkflowActivityContext, TResult> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<IPayload.Void, TResult>(
-                    activityTypeName,
-                    (_, ctx) =>
-                    {
-                        TResult r = activity(ctx);
-                        return Task.FromResult(r);
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<IPayload.Void, TResult>(
+                            activityTypeName,
+                            (_, ctx) =>
+                            {
+                                TResult r = activity(ctx);
+                                return Task.FromResult(r);
+                            }));
         }
 
         #endregion RegisterActivity takes `Func<.., TResult>` with 0 inputs (`TResult` must not be Task)
@@ -215,26 +231,28 @@ namespace Temporal.Worker.Hosting
                                                                              string activityTypeName,
                                                                              Func<TArg, TResult> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, TResult>(
-                    activityTypeName,
-                    (inp, _) =>
-                    {
-                        TResult r = activity(inp);
-                        return Task.FromResult(r);
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, TResult>(
+                            activityTypeName,
+                            (inp, _) =>
+                            {
+                                TResult r = activity(inp);
+                                return Task.FromResult(r);
+                            }));
         }
 
         public static TemporalActivityWorker RegisterActivity<TArg, TResult>(this TemporalActivityWorker worker,
                                                                              string activityTypeName,
                                                                              Func<TArg, IWorkflowActivityContext, TResult> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, TResult>(
-                    activityTypeName,
-                    (inp, ctx) =>
-                    {
-                        TResult r = activity(inp, ctx);
-                        return Task.FromResult(r);
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, TResult>(
+                            activityTypeName,
+                            (inp, ctx) =>
+                            {
+                                TResult r = activity(inp, ctx);
+                                return Task.FromResult(r);
+                            }));
         }
 
         #endregion RegisterActivity takes `Func<.., TResult>` with 1 input (`TResult` must not be Task)
@@ -245,26 +263,28 @@ namespace Temporal.Worker.Hosting
                                                               string activityTypeName,
                                                               Action activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<IPayload.Void, IPayload.Void>(
-                    activityTypeName,
-                    (_, __) =>
-                    {
-                        activity();
-                        return IPayload.Void.CompletedTask;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<IPayload.Void, IPayload.Void>(
+                            activityTypeName,
+                            (_, __) =>
+                            {
+                                activity();
+                                return IPayload.Void.CompletedTask;
+                            }));
         }
 
         public static TemporalActivityWorker RegisterActivity(this TemporalActivityWorker worker,
                                                               string activityTypeName,
                                                               Action<IWorkflowActivityContext> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<IPayload.Void, IPayload.Void>(
-                    activityTypeName,
-                    (_, ctx) =>
-                    {
-                        activity(ctx);
-                        return IPayload.Void.CompletedTask;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<IPayload.Void, IPayload.Void>(
+                            activityTypeName,
+                            (_, ctx) =>
+                            {
+                                activity(ctx);
+                                return IPayload.Void.CompletedTask;
+                            }));
         }
 
         #endregion RegisterActivity takes `Action<..>` with 0 inputs
@@ -275,26 +295,28 @@ namespace Temporal.Worker.Hosting
                                                                     string activityTypeName,
                                                                     Action<TArg> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, IPayload.Void>(
-                    activityTypeName,
-                    (inp, _) =>
-                    {
-                        activity(inp);
-                        return IPayload.Void.CompletedTask;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, IPayload.Void>(
+                            activityTypeName,
+                            (inp, _) =>
+                            {
+                                activity(inp);
+                                return IPayload.Void.CompletedTask;
+                            }));
         }
 
         public static TemporalActivityWorker RegisterActivity<TArg>(this TemporalActivityWorker worker,
                                                                     string activityTypeName,
                                                                     Action<TArg, IWorkflowActivityContext> activity)
         {
-            return worker.RegisterActivity(ActivityFactory.Create<TArg, IPayload.Void>(
-                    activityTypeName,
-                    (inp, ctx) =>
-                    {
-                        activity(inp, ctx);
-                        return IPayload.Void.CompletedTask;
-                    }));
+            return worker.RegisterActivity(
+                    new BasicActivityImplementationFactory<TArg, IPayload.Void>(
+                            activityTypeName,
+                            (inp, ctx) =>
+                            {
+                                activity(inp, ctx);
+                                return IPayload.Void.CompletedTask;
+                            }));
         }
 
         #endregion HostActivity takes `Action<..>` with 1 input
@@ -415,7 +437,7 @@ namespace Temporal.Worker.Hosting
             // POC. In reality here we will probably construct IWorkflowActivityContext from a worker context. 
             // Invocation paths will be different.
 
-            IActivityImplementation<TArg, TResult> activity = _activityFactory.CreateActivity();
+            IActivityImplementation<TArg, TResult> activity = _activityFactory.GetActivity();
 
             IPayloadConverter payloadConverter = CreatePayloadConverter(workerConfig);
             IPayloadCodec payloadCodec = CreatePayloadCodec(workerConfig);
@@ -473,6 +495,7 @@ namespace Temporal.Worker.Hosting
 
         internal ActivityAdapter(Func<TArg, IWorkflowActivityContext, Task<TResult>> activity)
         {
+            Validate.NotNull(activity);
             _activity = activity;
         }
 
@@ -486,18 +509,7 @@ namespace Temporal.Worker.Hosting
     {
         string ActivityTypeName { get; }
 
-        public IActivityImplementation<TArg, TResult> CreateActivity();
-    }
-
-    internal static class ActivityFactory
-    {
-        public static BasicActivityImplementationFactory<TArg, TResult> Create<TArg, TResult>(
-                string activityTypeName,
-                Func<TArg, IWorkflowActivityContext, Task<TResult>> activity)
-        {
-            return new BasicActivityImplementationFactory<TArg, TResult>(activityTypeName,
-                                                                         () => new ActivityAdapter<TArg, TResult>(activity));
-        }
+        public IActivityImplementation<TArg, TResult> GetActivity();
     }
 
     public class BasicActivityImplementationFactory<TArg, TResult> : IActivityImplementationFactory<TArg, TResult>
@@ -547,12 +559,30 @@ namespace Temporal.Worker.Hosting
         #endregion Static APIs
 
         private readonly string _activityTypeName;
-        private readonly Func<IActivityImplementation<TArg, TResult>> _activityCreator;
+        private readonly Func<IActivityImplementation<TArg, TResult>> _activityProvider;
 
-        public BasicActivityImplementationFactory(string activityTypeName, Func<IActivityImplementation<TArg, TResult>> activityCreator)
+        /// <summary>Creates a new <c>BasicActivityImplementationFactory</c>.</summary>
+        /// <param name="activityTypeName">The Name of the Activity Type.</param>
+        /// <param name="activityExec">A delegate that actually executes the activity.</param>
+        public BasicActivityImplementationFactory(string activityTypeName,
+                                                  Func<TArg, IWorkflowActivityContext, Task<TResult>> activityExec)
+            : this(activityTypeName,
+                   activityProvider: () => new ActivityAdapter<TArg, TResult>(activityExec))
         {
+        }
+
+        /// <summary>Creates a new <c>BasicActivityImplementationFactory</c>.</summary>
+        /// <param name="activityTypeName">The Name of the Activity Type.</param>
+        /// <param name="activityProvider">A delegate that, when invoked, returns an instnace of
+        /// <c>IActivityImplementation</c> to be used for an activity invocation.</param>
+        public BasicActivityImplementationFactory(string activityTypeName,
+                                                  Func<IActivityImplementation<TArg, TResult>> activityProvider)
+        {
+            Validate.NotNull(activityTypeName);
+            Validate.NotNull(activityProvider);
+
             _activityTypeName = activityTypeName;
-            _activityCreator = activityCreator;
+            _activityProvider = activityProvider;
         }
 
         public virtual string ActivityTypeName
@@ -560,9 +590,9 @@ namespace Temporal.Worker.Hosting
             get { return _activityTypeName; }
         }
 
-        public IActivityImplementation<TArg, TResult> CreateActivity()
+        public virtual IActivityImplementation<TArg, TResult> GetActivity()
         {
-            return _activityCreator();
+            return _activityProvider();
         }
     }
 
@@ -584,23 +614,32 @@ namespace Temporal.Worker.Hosting
 
     public class InstanceSharingActivityImplementationFactory<TActImpl, TArg, TResult>
             : BasicActivityImplementationFactory<TArg, TResult>, IDisposable
-            where TActImpl : IActivityImplementation<TArg, TResult>, new()
+            where TActImpl : IActivityImplementation<TArg, TResult>
     {
+        private static IActivityImplementation<TArg, TResult> NullActivityInstanceProvider()
+        {
+            throw new InvalidOperationException("This method should mever be invoked in practice.");
+        }
+
         private readonly TActImpl _sharedActivityImplementation;
 
-        protected TActImpl SharedActivityImplementation { get { return _sharedActivityImplementation; } }
-
         public InstanceSharingActivityImplementationFactory(TActImpl sharedActivityImplementation)
-            : this(GetDefaultActivityTypeNameForImplementationType(typeof(TActImpl)), sharedActivityImplementation)
+            : this(GetDefaultActivityTypeNameForImplementationType(typeof(TActImpl)),
+                   sharedActivityImplementation)
         {
         }
 
         public InstanceSharingActivityImplementationFactory(string activityTypeName, TActImpl sharedActivityImplementation)
             : base(activityTypeName,
-                   static () => new TActImpl())
+                   NullActivityInstanceProvider)
         {
             Validate.NotNull(sharedActivityImplementation);
             _sharedActivityImplementation = sharedActivityImplementation;
+        }
+
+        public override IActivityImplementation<TArg, TResult> GetActivity()
+        {
+            return _sharedActivityImplementation;
         }
 
         protected virtual void Dispose(bool disposing)
