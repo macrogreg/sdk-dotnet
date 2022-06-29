@@ -184,7 +184,7 @@ public record CompletedGreetingsInfo(int GreetingsCount);
 <small>Query handlers always have a logical result value. Query handlers must not interact with Temporal orchestration functionality, and must complete synchronously. Thus, query signal handlers must return:</small>
   - <small>Any value _except_: `Task`, `Task<T>`, or other Task-like awaitable types</small>
 
-* <small>**Note**: Although no restrictions other than mentioned above are placed on the return types of Queries and on the type of `T` (in `Task<T>`) in Main Routine signatures, it is _strongly_ recommended that JSON-like objects with named properties are used. The reasons are related to successful versioning strategies. (A detailed discussion of versioning is not in scope here.)</small>
+* <small> **Note**: Although no restrictions other than mentioned above are placed on the return types of Queries and on the type of `T` (in `Task<T>`) in Main Routine signatures, it is _strongly_ recommended that JSON-like objects with named properties are used. The reasons are related to successful versioning strategies. (A detailed discussion of versioning is not in scope here.)</small>
 
 ### Interfaces for Workflow Implementations
 
@@ -263,7 +263,7 @@ public record OtherData(int Count);
 public record MoreData(double Val);
 
 // Valid signatures:
-public static void ActivitySample01(SomeData input, IWorkflowActivityContext activityCtx) {/*...*/}
+public static void ActivtySmpl01(SomeData input, IWorkflowActivityContext activityCtx) {/*...*/}
 public static OtherData ActivitySample02(SomeData input) {/*...*/}
 public static void ActivitySample03(IWorkflowActivityContext activityCtx) {/*...*/}
 public static Task<MoreData> ActivitySample04Async() {/*...*/}
@@ -277,7 +277,7 @@ public static Task<string> ActivitySample12Async() {/*...*/}
 // INVALID signatures:
 
 // Invalid because `activityCtx` must follow data input:
-public static void ActivitySample21(IWorkflowActivityContext activityCtx, SomeData input) {/*...*/}
+public static void ActivtySmpl21(IWorkflowActivityContext activityCtx, SomeData input) {/*...*/}
 
 // Invalid because only 0 or 1 input args permitted:
 public static void ActivitySample22(SomeData inputA, OtherData inputB) {/*...*/}  
@@ -318,7 +318,8 @@ CompletedGreetingsInfo completedGreets
 await workflow.GetResult();
 
 //
-// All the typical workflow interactions (cancel, describe, terminate, ...) work in a similar manner.
+// All the typical workflow interactions (cancel, describe, terminate, ...) work in a
+// similar manner.
 // ...
 
 ```
@@ -499,28 +500,27 @@ Sample invocations:
 public async Task SayManyHellosAsync(GreetingInfo input, IWorkflowContext workflowCtx)
 {
     // ...
-    await workflowCtx.Activities.ExecuteAsync(
-            "SayHello",
-            new UtteranceInfo(_input.PersonName));
+    await workflowCtx.Activities.ExecuteAsync("SayHello",
+                                              new UtteranceInfo(_input.PersonName));
     // ...
 }
 
-// `ExecuteAsync(..)` has overloads so that additional arguments, such as Cancellation Tokens,
-// Activity Invocation Options, etc. can be specified. E.g.:
+// `ExecuteAsync(..)` has overloads so that additional arguments, such as Cancellation
+// Tokens, Activity Invocation Options, etc. can be specified. E.g.:
 
 [WorkflowSignalHandler]
 public async Task ProcessSomeSignalAsync(GreetingInfo input, IWorkflowContext workflowCtx)
 {
     // ...
     await workflowCtx.Activities.ExecuteAsync(
-            "SayHello",
-            new UtteranceInfo(_input.PersonName),
-            new ActivityInvocationOptions()
-            {
-                ActivityCancelPolicy = ActivityCancellationPolicy.WaitCancelComplete,
-                ScheduleToCloseTimeout = TimeSpan.FromSeconds(45),
-                TaskQueue = "Some-Queue"
-            });
+                "SayHello",
+                new UtteranceInfo(_input.PersonName),
+                new ActivityInvocationOptions()
+                {
+                    ActivityCancelPolicy = ActivityCancellationPolicy.WaitCancelComplete,
+                    ScheduleToCloseTimeout = TimeSpan.FromSeconds(45),
+                    TaskQueue = "Some-Queue"
+                });
     // ...
 }
 ```
@@ -543,7 +543,8 @@ Also, activities may be wrapped into  lambda expressions; then, the implementing
 To support such scenarios, the `[ActivityStub]`-attribute may be specified using an explicit activity signature:
 
 ```cs
-[ActivityStub(implementationSignature: typeof(Func<UtteranceInfo, Task>), ActivityTypeName="SayHello") ]
+[ActivityStub(implementationSignature: typeof(Func<UtteranceInfo, Task>),
+              ActivityTypeName="SayHello") ]
 internal partial class EquivalentUtterHelloStub : IActivityStub
 {
 }
@@ -576,13 +577,14 @@ public async Task SayManyHellosAsync(GreetingInfo input, IWorkflowContext workfl
     // Create an activity stub while specifying activity options that apply to all
     // invocations performed via this stub:
 
-    UtterHelloStub helloStub = new(workflowCtx,
-                                   new ActivityInvocationOptions()
-                                   {
-                                       ActivityCancelPolicy = ActivityCancellationPolicy.WaitCancelComplete,
-                                       ScheduleToCloseTimeout = TimeSpan.FromSeconds(45),
-                                       TaskQueue = "Some-Queue"
-                                   });
+    UtterHelloStub helloStub = new(
+                workflowCtx,
+                new ActivityInvocationOptions()
+                {
+                    ActivityCancelPolicy = ActivityCancellationPolicy.WaitCancelComplete,
+                    ScheduleToCloseTimeout = TimeSpan.FromSeconds(45),
+                    TaskQueue = "Some-Queue"
+                });
     
     // ...
     // Invoke the activity using a particular cancellation token:
@@ -608,16 +610,17 @@ public async Task ProcessSomeSignalAsync(GreetingInfo input, IWorkflowContext wo
     await helloStub.SayHelloAsync(new UtteranceInfo(_input.PersonName), cancelControl.Token);
 
     // ...
-    // Invoke an activity using specific invocation options and the same particular cancellation token:
+    // Invoke an activity using specific invocation options and the same cancellation token:
 
-    await helloStub.SayHelloAsync(new UtteranceInfo(_input.PersonName),
-                                  new ActivityInvocationOptions()
-                                  {
-                                      ActivityCancelPolicy = ActivityCancellationPolicy.WaitCancelComplete,
-                                      ScheduleToCloseTimeout = TimeSpan.FromSeconds(45),
-                                      TaskQueue = "Some-Queue"
-                                  },
-                                  cancelControl.Token);
+    await helloStub.SayHelloAsync(
+                new UtteranceInfo(_input.PersonName),
+                new ActivityInvocationOptions()
+                {
+                    ActivityCancelPolicy = ActivityCancellationPolicy.WaitCancelComplete,
+                    ScheduleToCloseTimeout = TimeSpan.FromSeconds(45),
+                    TaskQueue = "Some-Queue"
+                },
+                cancelControl.Token);
     // ...
 }
 ```
@@ -654,22 +657,22 @@ public async Task ParentWorkflowMainRoutine(IWorkflowContext workflowCtx)
     // Start a child workflow with default options:
 
     IChildWorkflowHandle child = await workflowCtx.ChildWorkflows.StartAsync(
-            "Sample-Workflow-Id",                                       // workflow-id
-            "Perform-Some-Logic",                                       // workflow-type-name            
-            new DataRecord(42, "forty two"));                           // workflow input
+                "Sample-Workflow-Id",                                   // workflow-id
+                "Perform-Some-Logic",                                   // workflow-type-name            
+                new DataRecord(42, "xyz"));                             // workflow input
 
     // Start a child workflow with additional options:
 
     IChildWorkflowHandle child2 = await workflowCtx.ChildWorkflows.StartAsync(
-            "Sample-Workflow-Id",                                       // workflow-id
-            "Perform-Some-Logic",                                       // workflow-type-name            
-            new DataRecord(42, "forty two"),                            // workflow input
-            new StartChildWorkflowConfiguration()
-            {
-                WorkflowExecutionTimeout = TimeSpan.FromMinutes(1),     // override a subset of
-                TaskQueue = "Some-Queue",                               // child settings with 
-                ParentClosePolicy = ParentClosePolicy.RequestCancel     // specific values
-            });
+                "Sample-Workflow-Id",                                   // workflow-id
+                "Perform-Some-Logic",                                   // workflow-type-name            
+                new DataRecord(42, "xyz"),                              // workflow input
+                new StartChildWorkflowConfiguration()
+                {
+                    WorkflowExecutionTimeout = TimeSpan.FromMinutes(1), // override a subset of
+                    TaskQueue = "Some-Queue",                           // child settings with 
+                    ParentClosePolicy = ParentClosePolicy.RequestCancel // specific values
+                });
 
     // Send a signal to a child:
 
@@ -706,14 +709,14 @@ public async Task ParentWorkflowMainRoutine(IWorkflowContext workflowCtx)
 
     // Start a child workflow with default options, wait for it to conclude and get the result:
 
-    ResultDataset resDat = await someLogicStub.ApplyTheLogicAsync(new DataRecord(42, "forty two"));
+    ResultDataset resDat = await someLogicStub.ApplyTheLogicAsync(new DataRecord(42, "xyz"));
     
     // Do the same using additional child workflow options:
 
     PerformSomeLogicWorkflowStub someLogicStub2 = new(workflowCtx, "Sample-Workflow-Id2");
 
     ResultDataset resDat2 = await someLogicStub2.ApplyTheLogicAsync(
-                new DataRecord(42, "forty two"),
+                new DataRecord(42, "xyz"),
                 new StartChildWorkflowConfiguration()
                 {
                     WorkflowExecutionTimeout = TimeSpan.FromMinutes(1),
@@ -733,11 +736,13 @@ public async Task ParentWorkflowMainRoutine(IWorkflowContext workflowCtx)
     // ...
     PerformSomeLogicWorkflowStub someLogicStub = new(workflowCtx, "Sample-Workflow-Id");
 
-    Task<ResultDataset> someLogicConclusion = someLogicStub.ApplyTheLogicAsync(new DataRecord(42, "forty two"));
+    Task<ResultDataset> someLogicConclusion
+                = someLogicStub.ApplyTheLogicAsync(new DataRecord(42, "xyz"));
 
-    // At this point the start of `someLogicStub` is NOT yet initiated (aka communicated to the server),
-    // because nothing was awaited after the call to `ApplyTheLogicAsync(..)`.
-    // The next command will both, actually initiate the start of `someLogicStub` AND await its completion:
+    // At this point the start of `someLogicStub` is NOT yet initiated (aka not communicated to
+    // the server), because nothing was awaited after the call to `ApplyTheLogicAsync(..)`.
+    // The next command will both, actually initiate the start of `someLogicStub`
+    // AND await its completion:
 
     ResultDataset resDat = await someLogicConclusion;
     // ...
@@ -755,7 +760,8 @@ public async Task ParentWorkflowMainRoutine(IWorkflowContext workflowCtx)
 
     PerformSomeLogicWorkflowStub someLogicStub = new(workflowCtx, "Sample-Workflow-Id");
 
-    Task<ResultDataset> someLogicConclusion = someLogicStub.ApplyTheLogicAsync(new DataRecord(42, "forty two"));
+    Task<ResultDataset> someLogicConclusion
+                = someLogicStub.ApplyTheLogicAsync(new DataRecord(42, "xyz"));
 
     // The start of `someLogicStub` is NOT yet initiated (communicated to the server).
 
@@ -811,12 +817,12 @@ public static async Task ExecuteWorkerHostAsync()
 
     await worker.StartAsync();
 
-    // The app runs and handles Workflow and Activity Tasks until the user decides to shut it down.
+    // The app runs and handles Workflow and Activity Tasks until the user shuts it down.
     Console.WriteLine("Worker started. Press enter to terminate.");
     Console.ReadLine();
 
     // Initiate the shutdown of the worker.
-    // (The task completes when the shutdown sequence has been initiated by the underlying Core engine.)
+    // (The task completes when the shutdown sequence is initiated by the underlying Core lib.)
 
     await worker.RequestShutdownAsync();
 
