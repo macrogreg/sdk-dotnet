@@ -34,8 +34,11 @@ If you have feedback on more detailed aspects, please use any of our another cha
 - [Invoke child workflows from a within a workflow](#invoke-child-workflows-from-a-within-a-workflow)
     - [String-based aka not-strongly-typed API](#string-based-aka-not-strongly-typed-api)
     - [Strongly-typed API](#strongly-typed-api)
-- [Register a worker](#register-a-worker)
-    - [Dealing with fatal worker errors](#dealing-with-fatal-worker-errors)
+- [Worker host application](#worker-host-application)
+    - [Worker life cycle](#worker-life-cycle)
+    - [Registering workflow- and activity-implementations](#registering-workflow--and-activity-implementations)
+    - [Starting the worker](#starting-the-worker)
+    - [Processing critical worker errors](#processing-critical-worker-errors)
 
 <!-- /TOC -->
 
@@ -785,7 +788,7 @@ public async Task ParentWorkflowMainRoutine(IWorkflowContext workflowCtx)
 }
 ```
 
-## Register a worker
+## Worker host application
 
 .NET server applications overwhelmingly use a well-known [host abstraction](https://docs.microsoft.com/en-us/dotnet/core/extensions/generic-host) to configure, execute, and control an application. We presume that .NET developers will expect that Temporal workers fully integrate with [`HostBuilder`](https://docs.microsoft.com/en-us/dotnet/core/extensions/generic-host) and all related functionality. The details of such integration are not in scope here. Instead, we focus on a minimalist worker functionality without any dependency injection.
 
@@ -815,66 +818,32 @@ public static async Task ExecuteWorkerHostAsync()
           .RegisterWorkflow<PerformSomeLogicWorkflow>();
 
     // Start the worker:
-    // (The returned task completes when the worker is is up and running.)
+    // (The returned task completes when the worker is up and running.)
 
     await worker.StartAsync();
 
-    // The app runs and handles Workflow and Activity Tasks until the user shuts it down.
-    Console.WriteLine("Worker started. Press enter to terminate.");
-    Console.ReadLine();
-
-    // Initiate the shutdown of the worker.
-    // (The task completes when the shutdown sequence is initiated by the underlying Core lib.)
-
-    await worker.RequestShutdownAsync();
-
-    // Wait for the worker to completely shut down.
-    // If any abnormal errors occurred while the worker was running, they will be embedded
-    // into the Task returned by `RunToCompletion()`.
-
-    await worker.RunToCompletion();
-}
-```
-
-### Dealing with fatal worker errors
-
-Some critical errors during worker executions may lead to its immediate shutdown. Such errors are surfaced by awaiting the `Task` returned from the worker's `RunToCompletion()`-method:
-
-The method `StartAsync()` in the above sample is used when the developer needs to start the worker and to know that the worker has completed the initialization and started processing messages. Conversely, the `Task` returned by the worker's `RunToCompletion()`-method completes when the worker has terminated. Either normally (started, run, finished processing all messages and completed the shutdown sequence) OR abnormally (started, encountered a fatal error anywhere during the execution, terminated).  
-If `RunToCompletion()` is called before `StartAsync()`, it will initiate the worker's start-up. Conversely, if the worker is already running, `RunToCompletion()` will not affect the worker's running state, but will return the Task representing the completion of the ongoing worker execution.
-
-The following example is similar to the previous, however, fatal errors are printed to the console:
-
-```cs
-public static async Task ExecuteWorkerHostAsync()
-{
-    // Instantiate a worker:
-
-    TemporalWorkerConfiguration workerConfig = TemporalWorkerConfiguration.ForLocalHost()
-    using TemporalWorker worker = new(workerConfig);
-
-    // Register activities and workflows ...
-
-    // Start the worker and get the task that represents its eventual completion:
-
-    Task workerCompletion = worker.RunToCompletion();
-
-    // Use a logical thread fork for user interactivity:
+    // The app shall run and handle Workflow and Activity Tasks until the user shuts it down
+    // by pressing enter. Use a logical thread fork for the user interactivity:
 
     _ = Task.Run(async () => 
-                 {
+                 {                     
                      Console.WriteLine("Worker started. Press enter to terminate.");
-                     Console.ReadLine();                     
+                     Console.ReadLine();
+
+                    // Initiate the shutdown of the worker:
+                    //  (The task completes when the shutdown sequence is initiated by
+                    //   the underlying Core lib.)
                      await worker.RequestShutdownAsync();
                  })
 
-    // Wait for the worker to shut down. 
-    // That will happen either when the user presses Enter and `RequestShutdownAsync()` is
-    // invoked on the other thread, or when a critical error is encountered.
-    // If errors occur, print them to the console:
+    // On the main thread, perform an async wait for the worker to run and to eventually
+    // shut down. That will happen either when the user presses Enter and
+    // `RequestShutdownAsync()` is invoked on the other thread, or when a critical error
+    // is encountered. If errors occur, print them to the console:
+
     try
     {
-        await workerCompletion;
+        await worker.RunToCompletion();
     }
     catch (Exception ex)
     {
@@ -882,3 +851,39 @@ public static async Task ExecuteWorkerHostAsync()
     }
 }
 ```
+
+### Worker life cycle
+
+ 1. Create the worker instance.
+ 2. Configure the worker, register workflows and activities.
+ 3. Start the worker.
+ 4. The worker runs by picking up workflow and activity tasks from the server and processing them.
+ 5. Request worker shutdown.
+ 6. The worker runs the started tasks to completion and shuts down.
+
+### Registering workflow- and activity-implementations
+
+Registering workflow- and activity-implementations must occur before the worker is started. Attempting to register a workflow or activity with a running worker will result in a runtime error.
+
+Some workflow / activity requirements can only be validated at runtime. For example, the correct usage of workflow-attributes is validated at _compile time_ in scenarios that involve Source Generation, and at _runtime_ in other cases. Such runtime validation will occur during the registration phase. Problems will be reported using fail-fast descriptive errors.
+
+There are advanced registration scenarios, such as bulk-registering all activities contained in a class, or all workflows contained in an assembly. Such scenarios are idiomatically enabled by the aforementioned application host abstraction. This spec focusses on core worker functionality; application host features, including bulk registration and various others are not in scope here.
+
+### Starting the worker
+
+The worker is started either by calling `StartAsync()` or by calling `RunToCompletion()`. Both APIs are idempotent: they will return immediately if the worker is already running.
+
+The `Task` returned by `StartAsync()` completes when the worker is known to have completed the initialization and started processing task-items. Developers can use it if they need to know that the start-up is completed. For instance, in the above sample, it is used to ensure that `RequestShutdownAsync()` cannot be invoked before the worker initialized.
+
+Conversely, the `Task` returned by `RunToCompletion()` completes when the worker has terminated.  
+Termination can occur either _normally_ (the full lifecycle described [above](#worker-life-cycle) has run to completion) or _abnormally_ (the worker encountered a fatal error at any time during its lifecycle and terminated immediately). Developers can use `RunToCompletion()` to start the worker when they do not need to wait for the worker to _start_ execution, just for the worker to _eventually stop_.
+
+### Processing critical worker errors
+
+During the worker lifecycle, critical errors can occur that prevent the worker from continuing execution. Such fatal errors are surfaced through corresponding exceptions.  
+(Non-fatal errors and and informational messages are logged, and do not interfere with the normal worker operation. In .NET applications, diagnostic logging is typically managed by the aforementioned application host. That topic is not in scope here.)
+ - If fatal errors occur before step 3 [above](#worker-life-cycle) (i.e. before the worker is started), then they are surfaced immediately.  
+ - Fatal errors that occur during the worker start-up process are embedded into the `Task` returned from `StartAsync()`. They will be thrown using the normal .NET mechanism when the `Task` returned from `StartAsync()` is awaited. (If `RunToCompletion()` is used instead of `StartAsync()`, such errors are respectively embedded into `RunToCompletion()`'s `Task`.)
+ - Fatal errors that occur during the normal worker operation (step 4 [above](#worker-life-cycle)) are embedded into the `Task` returned from `RunToCompletion()`. That `Task` will complete normally if the worker is shut down gracefully. If fatal errors occur, they will be thrown using the normal .NET mechanism when the `Task` returned from `RunToCompletion()` is awaited.
+
+For instance, in the [above](#worker-host-application) sample, exceptions resulting from fatal errors that occur during worker configuration and start-up will escape, and exceptions resulting from fatal errors that occur during normal worker operation will be captured and printed to the console.
