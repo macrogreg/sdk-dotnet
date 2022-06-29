@@ -184,7 +184,7 @@ public record CompletedGreetingsInfo(int GreetingsCount);
 <small>Query handlers always have a logical result value. Query handlers must not interact with Temporal orchestration functionality, and must complete synchronously. Thus, query signal handlers must return:</small>
   - <small>Any value _except_: `Task`, `Task<T>`, or other Task-like awaitable types</small>
 
-* <small>**Note**: Although no restrictions other then mentioned above are placed on the return types of Queries and on the type of `T` (in `Task<T>`) in Main Routine signatures, it is _strongly_ recommended that JSON-like objects with named properties are used. The reasons are related to successful versioning strategies. (A detailed discussion of versioning is not in scope here.)</small>
+* <small>**Note**: Although no restrictions other than mentioned above are placed on the return types of Queries and on the type of `T` (in `Task<T>`) in Main Routine signatures, it is _strongly_ recommended that JSON-like objects with named properties are used. The reasons are related to successful versioning strategies. (A detailed discussion of versioning is not in scope here.)</small>
 
 ### Interfaces for Workflow Implementations
 
