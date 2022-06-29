@@ -33,7 +33,7 @@ If you have feedback on more detailed aspects, please use another channel ([info
     - [String-based aka not-strongly-typed API](#string-based-aka-not-strongly-typed-api)
     - [Strongly-typed API](#strongly-typed-api)
 - [Register a worker](#register-a-worker)
-        - [Dealing with fatal worker errors](#dealing-with-fatal-worker-errors)
+    - [Dealing with fatal worker errors](#dealing-with-fatal-worker-errors)
 
 <!-- /TOC -->
 
@@ -828,7 +828,7 @@ public static async Task ExecuteWorkerHostAsync()
 }
 ```
 
-#### Dealing with fatal worker errors
+### Dealing with fatal worker errors
 
 Some critical errors during worker executions may lead to its immediate shutdown. Such errors are surfaced by awaiting the `Task` returned from the worker's `RunToCompletion()`-method:
 
