@@ -1,10 +1,12 @@
 
 # Temporal SDK for .NET <br /> High-level Specification
 
+This is a high-level specification for the Temporal .NET SDK. It focusses on how the SDK will be used in code for creating Temporal-based applications. The internal implementation strategy of the SDK itself is not in scope of this specification and shall be covered elsewhere.  
+The main goal of this document is to specify a consistent "look-and-feel" that addresses all critical aspects of a Temporal SDK, and achieves the right level of consistency with both, Temporal and .NET idioms. In-line with this high-level goal, many details are left out on purpose, and names and monikers may be subject to change.
 
-This is a high-level specification. Many details are left out on purpose.  
 We are very keen on feedback. Please try to keep it as high-level, as this document.  
-If you have feedback on more detailed aspects, please use another channel ([info](https://dotnet.temporal.io/Articles/Contribution_Guide.html#please-talk-to-us)).  
+If you have feedback on more detailed aspects, please use any of our another channels ([info](https://dotnet.temporal.io/Articles/Contribution_Guide.html#please-talk-to-us)).
+
 <big>🧡</big> **Thank you!**
 
 ## Contents
