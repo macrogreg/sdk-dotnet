@@ -171,24 +171,18 @@ public record CompletedGreetingsInfo(int GreetingsCount);
 ### Workflow routines: Return types & Sync/Async requirements
 
 * The Main Workflow routine MUST be async.  
-<small>
-Vast majority of workflows have at least one interaction with Temporal orchestration functionality (activities, timers, child workflows, etc.), which are all async. A Main Workflow Routine must return one of:
-  - `Task` (the workflow does not have a logical result value)
-  - `Task<T>` (the workflow has a logical result value of type `T`)
-</small>
+<small>Vast majority of workflows have at least one interaction with Temporal orchestration functionality (activities, timers, child workflows, etc.), which are all async. A Main Workflow Routine must return one of:</small>
+  - <small>`Task` (the workflow does not have a logical result value)</small>
+  - <small>`Task<T>` (the workflow has a logical result value of type `T`)</small>
 
 * Signal handlers may be sync or async.  
-<small>
-Signal handlers never have a logical result value. Signal handlers may interact with Temporal orchestration functionality, in which case they need to be async. However, if a signal handler does not interact with any async functionality, we do not burden the developer with complying with an async signature. Thus, a signal handler method must always return one of:
-  - `Task` (not `Task<T>`)
-  - `void`
-</small>
+<small>Signal handlers never have a logical result value. Signal handlers may interact with Temporal orchestration functionality, in which case they need to be async. However, if a signal handler does not interact with any async functionality, we do not burden the developer with complying with an async signature. Thus, a signal handler method must always return one of:</small>
+  - <small>`Task` (not `Task<T>`)</small>
+  - <small>`void`</small>
 
 * Query handlers must be sync.  
-<small>
-Query handlers always have a logical result value. Query handlers must not interact with Temporal orchestration functionality, and must complete synchronously. Thus, query signal handlers must return:
-  - Any value _except_: `Task`, `Task<T>`, or other Task-like awaitable types
-</small>
+<small>Query handlers always have a logical result value. Query handlers must not interact with Temporal orchestration functionality, and must complete synchronously. Thus, query signal handlers must return:</small>
+  - <small>Any value _except_: `Task`, `Task<T>`, or other Task-like awaitable types</small>
 
 * <small>**Note**: Although no restrictions other then mentioned above are placed on the return types of Queries and on the type of `T` (in `Task<T>`) in Main Routine signatures, it is _strongly_ recommended that JSON-like objects with named properties are used. The reasons are related to successful versioning strategies. (A detailed discussion of versioning is not in scope here.)</small>
 
