@@ -31,6 +31,13 @@ If you have feedback on more detailed aspects, please use any of our another cha
 - [Invoke activities from within a workflow](#invoke-activities-from-within-a-workflow)
     - [String-based aka not-strictly-typed API](#string-based-aka-not-strictly-typed-api)
     - [Strongly-typed API](#strongly-typed-api)
+        - [Usage](#usage)
+            - [Most simple](#most-simple)
+            - [Configure ActivityInvocationOptions for the entire stub](#configure-activityinvocationoptions-for-the-entire-stub)
+            - [Configure ActivityInvocationOptions for a particular invocation](#configure-activityinvocationoptions-for-a-particular-invocation)
+        - [Additional activity stub features](#additional-activity-stub-features)
+            - [Multiple activity implementations in a type](#multiple-activity-implementations-in-a-type)
+            - [Activity implementation type not accessible to caller during development](#activity-implementation-type-not-accessible-to-caller-during-development)
 - [Invoke child workflows from a within a workflow](#invoke-child-workflows-from-a-within-a-workflow)
     - [String-based aka not-strongly-typed API](#string-based-aka-not-strongly-typed-api)
     - [Strongly-typed API](#strongly-typed-api)
@@ -446,7 +453,8 @@ This sample uses all three of these features:
 [WorkflowStub(typeof(SayHelloWorkflow),
               StartMethod="InitiateAsync",
               GetResultMethod="ConcludeAllGreetingsAsync"),
-              SignalWithStartMethods=new[]{"InitiateAndUpdateGreeting", "UpdateGreetingSpec"}]
+              SignalWithStartMethods=new[] {
+                    "InitiateAndUpdateGreeting", nameof(SayHelloWorkflow.UpdateGreetingSpec)}]
 internal partial class SayHelloWorkflowStub : IWorkflowStub
 {        
 }
@@ -538,26 +546,21 @@ The SDK implements support for strongly-typed activity invocation APIs using .NE
 
 To seed stub generation, declare a partial class decorated as an ActivityStub, while referencing the activity implementation. An invocation stub with the appropriate invocation signatures will be generated.  
 <small>(**Note**: There is no "`...`" here. This declaration is _all_ the code needed to generated a stub.)</small>
+
 ```cs
-[ActivityStub(implementingType: typeof(Utterances), implementingMethod: "SayHelloAsync") ]
+[ActivityStub(implementingType: typeof(Utterances),
+              implementingMethod: nameof(Utterances.SayHelloAsync)) ]
 internal partial class UtterHelloStub : IActivityStub
 {
 }
 ```
 
-In some cases, the activity implementation may not be accessible at development time.  
-Also, activities may be wrapped into  lambda expressions; then, the implementing method is contained within a compiler-generated type that cannot be easily referenced by a `typeof()`-expression.  
-To support such scenarios, the `[ActivityStub]`-attribute may be specified using an explicit activity signature:
+#### Usage
 
-```cs
-[ActivityStub(implementationSignature: typeof(Func<UtteranceInfo, Task>),
-              ActivityTypeName="SayHello") ]
-internal partial class EquivalentUtterHelloStub : IActivityStub
-{
-}
-```
+The generated stubs include overloads for common  usage scenarios, such as cancellation tokens, activity invocation options that can be applied either to the entire stub or to a particular invocation, and other additional items.
 
-Usage:
+##### Most simple
+
 ```cs
 [WorkflowMainRoutine]
 public async Task SayManyHellosAsync(GreetingInfo input, IWorkflowContext workflowCtx)
@@ -570,14 +573,13 @@ public async Task SayManyHellosAsync(GreetingInfo input, IWorkflowContext workfl
 }
 ```
 
-The generated stubs include overloads for common  usage scenarios, such as cancellation tokens, activity invocation options that can be applied either to the entire stub or to a particular invocation, and other additional items:
+##### Configure `ActivityInvocationOptions` for the entire stub
 
 ```cs
 [WorkflowMainRoutine]
 public async Task SayManyHellosAsync(GreetingInfo input, IWorkflowContext workflowCtx)
 {
     // ...
-
     CancellationTokenSource cancelControl = new();
 
     // ...    
@@ -593,30 +595,28 @@ public async Task SayManyHellosAsync(GreetingInfo input, IWorkflowContext workfl
                     TaskQueue = "Some-Queue"
                 });
     
-    // ...
     // Invoke the activity using a particular cancellation token:
 
     await helloStub.SayHelloAsync(new UtteranceInfo(_input.PersonName), cancelControl.Token);
-
     // ...
 }
+```
 
+##### Configure `ActivityInvocationOptions` for a particular invocation
+
+```cs
 public async Task ProcessSomeSignalAsync(GreetingInfo input, IWorkflowContext workflowCtx)
 {
-    // ...
-    CancellationTokenSource cancelControl = new();
-    
     // ...
     // Create an activity stub using the default options applicable in the current workflow:
 
     UtterHelloStub helloStub = new(workflowCtx);
-
-    // ...
+    CancellationTokenSource cancelControl = new();
+    
     // Invoke an activity using default options and a particular cancellation token:
 
     await helloStub.SayHelloAsync(new UtteranceInfo(_input.PersonName), cancelControl.Token);
 
-    // ...
     // Invoke an activity using specific invocation options and the same cancellation token:
 
     await helloStub.SayHelloAsync(
@@ -629,6 +629,39 @@ public async Task ProcessSomeSignalAsync(GreetingInfo input, IWorkflowContext wo
                 },
                 cancelControl.Token);
     // ...
+}
+```
+
+#### Additional activity stub features
+
+Details of additional features are not in scope for this high-level overview. This section outlines scenarios that could be addressed based on user-driven priorities.
+
+##### Multiple activity implementations in a type
+
+* Specify the `implementingType`, and omit the `implementingMethod`.  
+
+<small>Note: The generated stub will contain invocation methods for all activities included int he implementation type. (Only activities marked with the optional `[ActivityImplementation]`-attribute will be included.)</small>
+
+```cs
+[ActivityStub(implementingType: typeof(Utterances))]
+internal partial class UtterHelloStub : IActivityStub
+{
+}
+```
+
+##### Activity implementation type not accessible to caller during development
+
+* Explicitly specify the implementation interface / signature.
+
+<small>Note: This case also applies when activities are wrapped into lambda expressions. Then, the implementing method is contained within a compiler-generated type that cannot be easily referenced by a `typeof()`-expression.</small>
+
+To support such scenarios, the `[ActivityStub]`-attribute may be specified using an :
+
+```cs
+[ActivityStub(implementationSignature: typeof(Func<UtteranceInfo, Task>),
+              ActivityTypeName="SayHello") ]
+internal partial class EquivalentUtterHelloStub : IActivityStub
+{
 }
 ```
 
