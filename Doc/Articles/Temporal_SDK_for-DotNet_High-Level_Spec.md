@@ -335,7 +335,8 @@ The SDK implements support for strongly-typed workflow invocation APIs using .NE
 The SDK will auto-generate a stub class for a workflow based on the workflow definition.
 Current .NET tooling allows for such generation to occur as a part of the normal build process. No additional build-steps or tools (beyond a current .NET SDK) are necessary. The only requirement is that the project that uses the stub must reference our Source-Generator-Nuget (part of the SDK).
 
-Code needed to initiate stub generation:
+Code needed to initiate stub generation:   
+<small>(**Note**: There is no "`...`" here. This declaration is _all_ the code needed to generated a stub.)</small>
 
 ```cs
 [WorkflowStub(typeof(SayHelloWorkflow))]
@@ -535,7 +536,8 @@ public async Task ProcessSomeSignalAsync(GreetingInfo input, IWorkflowContext wo
 
 The SDK implements support for strongly-typed activity invocation APIs using .NET Source Generators, in a way similar to workflow invocations (see the [corresponding section ](#strongly-typed-api) for additional details).
 
-To seed stub generation, declare a partial class decorated as an ActivityStub, while referencing the activity implementation. An invocation stub with the appropriate invocation signatures will be generated.
+To seed stub generation, declare a partial class decorated as an ActivityStub, while referencing the activity implementation. An invocation stub with the appropriate invocation signatures will be generated.  
+<small>(**Note**: There is no "`...`" here. This declaration is _all_ the code needed to generated a stub.)</small>
 ```cs
 [ActivityStub(implementingType: typeof(Utterances), implementingMethod: "SayHelloAsync") ]
 internal partial class UtterHelloStub : IActivityStub
@@ -693,10 +695,10 @@ public async Task ParentWorkflowMainRoutine(IWorkflowContext workflowCtx)
 
 ### Strongly-typed API
 
-The strongly-typed API for child workflow interactions is similar to [client-side workflow stubs](#strongly-typed-api). Some differences exist to account for the distinctiveness of child workflows.
+The strongly-typed API for child workflow interactions is similar to [client-side workflow stubs](#strongly-typed-api). Some differences exist to account for the distinctiveness of child workflows.  
+<small>(**Note**: There is no "`...`" here. This declaration is _all_ the code needed to generated a stub.)</small>
 
 ```cs
-
 [ChildWorkflowStub(typeof(IPerformSomeLogicWorkflow))]
 internal partial class PerformSomeLogicWorkflowStub : IWorkflowStub
 {        
