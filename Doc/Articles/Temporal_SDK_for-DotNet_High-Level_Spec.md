@@ -28,6 +28,10 @@ If you have feedback on more detailed aspects, please use any of our another cha
         - [Use a stub to interact with an existing workflow](#use-a-stub-to-interact-with-an-existing-workflow)
         - [Stub method overloads](#stub-method-overloads)
         - [Additional workflow stub features](#additional-workflow-stub-features)
+            - [Workflow implementation developer wishes to create and publish a stub](#workflow-implementation-developer-wishes-to-create-and-publish-a-stub)
+            - [Start a workflow represented by a stub without waiting for the workflow conclusion](#start-a-workflow-represented-by-a-stub-without-waiting-for-the-workflow-conclusion)
+            - [Get the result of a workflow that was started elsewhere, without trying to start it again](#get-the-result-of-a-workflow-that-was-started-elsewhere-without-trying-to-start-it-again)
+            - [An atomic Signal-with-Start, as supported by the respective Temporal client API](#an-atomic-signal-with-start-as-supported-by-the-respective-temporal-client-api)
 - [Invoke activities from within a workflow](#invoke-activities-from-within-a-workflow)
     - [String-based aka not-strictly-typed API](#string-based-aka-not-strictly-typed-api)
     - [Strongly-typed API](#strongly-typed-api)
@@ -38,9 +42,12 @@ If you have feedback on more detailed aspects, please use any of our another cha
         - [Additional activity stub features](#additional-activity-stub-features)
             - [Multiple activity implementations in a type](#multiple-activity-implementations-in-a-type)
             - [Activity implementation type not accessible to caller during development](#activity-implementation-type-not-accessible-to-caller-during-development)
+            - [Activity implementation developer wishes to create and publish a stub](#activity-implementation-developer-wishes-to-create-and-publish-a-stub)
 - [Invoke child workflows from a within a workflow](#invoke-child-workflows-from-a-within-a-workflow)
     - [String-based aka not-strongly-typed API](#string-based-aka-not-strongly-typed-api)
     - [Strongly-typed API](#strongly-typed-api)
+        - [Additional workflow stub features](#additional-workflow-stub-features)
+            - [Workflow implementation developer wishes to create and publish a child stub](#workflow-implementation-developer-wishes-to-create-and-publish-a-child-stub)
 - [Worker host application](#worker-host-application)
     - [Worker life cycle](#worker-life-cycle)
     - [Registering workflow- and activity-implementations](#registering-workflow--and-activity-implementations)
@@ -434,21 +441,44 @@ await sayHellosStub.UpdateGreetingSpecAsync(new GreetingInfo(10, "John"),
 
 #### Additional workflow stub features
 
-There are some common scenarios for which stub APIs cannot be generated fully automatically because there is no 1:1 correspondence with implementations. These scenarios are achieved by specifying the required additional information via named property-parameters to the `[WorkflowStub]`-attribute:
+A _detailed_ discussion of additional features are not in scope for this high-level overview. This section merely _outlines_ scenarios that could be addressed based on user-driven priorities.
 
-**(a)** Start a workflow represented by a stub without waiting for the workflow conclusion:  
-Use the "`string StartMethod`" property to specify the name of the method to be generated.  
+##### Workflow implementation developer wishes to create and publish a stub
+
+Use the optional `WorkflowStub`- and the `ChildWorkflowStub`-properties of the [`[WorkflowImplementation]`-attribute](#define-a-workflow-implementation) to generate stubs alongside the implementation.  
+<small>(Specify `"."` as the stub type name to auto-generate the names to be `XxxStub` and `XxxChildStub`, where `Xxx` is the name of the implementation type.)</small>
+
+```cs
+[WorkflowImplementation(ActivityStub="SayHelloStub", ChildWorkflowStub="HelloSubworkflowStub")]
+public class SayHelloWorkflow
+{
+    [WorkflowMainRoutine]
+    public async Task SayManyHellosAsync(GreetingInfo initialGreetingSpec) { /* ... */ }
+
+    [WorkflowSignalHandler]
+    public void UpdateGreetingSpec(GreetingInfo greetingSpec) { /* ... */ }
+    
+    // ...    
+}
+```
+
+##### Start a workflow represented by a stub without waiting for the workflow conclusion  
+
+Use the `StartMethod`-property of the `[WorkflowStub]`-attribute to specify the name of the method to be generated.  
 <small>(The stub signature will be equivalent to the main routine stub; see note (<span style="color:red">__*__</span>) in the above section on [executing a workflow from start to conclusion](#create-a-workflow-stub-and-use-it-to-execute-the-workflow-from-start-to-conclusion).)</small>
 
-**(b)** Get the result of a workflow that was started elsewhere, without trying to start it again:  
-Use the "`string GetResultMethod`" property to specify the name of the method to be generated.  
+##### Get the result of a workflow that was started elsewhere, without trying to start it again
+
+Use the `GetResultMethod`-property of the `[WorkflowStub]`-attribute to specify the name of the method to be generated.  
 <small>(The return type of the stub is based on the return type of the main routine implementation.)</small>
 
-**(c)** An atomic Signal-with-Start, as supported by the respective Temporal client API:  
-Use the "`string[] SignalWithStartMethods`" property to specify the names of the methods to be generated, and the respective signal implementation methods. The specified string MUST have an _even_ number of elements denoting pairs `(StubMethodName, SignalHandlerImplementationMethodName)`.  
+##### An atomic Signal-with-Start, as supported by the respective Temporal client API
+
+Use the `SignalWithStartMethods`-property of the `[WorkflowStub]`-attribute to specify the names of the methods to be generated, and the respective signal implementation methods. The language type of the property is `string[]` and it MUST contain an _even_ number of elements denoting pairs `(StubMethodName, SignalHandlerImplementationMethodName)`.  
 <small>(The stub signatures will be based on the signatures of the main routine and the specified signal handler method; see note (<span style="color:red">__*__</span>) in the above section on [executing a workflow from start to conclusion](#create-a-workflow-stub-and-use-it-to-execute-the-workflow-from-start-to-conclusion).)</small>
 
-This sample uses all three of these features:
+The next sample uses all 3 of the above-mentioned features.  
+Stub declaration:
 ```cs
 [WorkflowStub(typeof(SayHelloWorkflow),
               StartMethod="InitiateAsync",
@@ -634,7 +664,7 @@ public async Task ProcessSomeSignalAsync(GreetingInfo input, IWorkflowContext wo
 
 #### Additional activity stub features
 
-Details of additional features are not in scope for this high-level overview. This section outlines scenarios that could be addressed based on user-driven priorities.
+A _detailed_ discussion of additional features are not in scope for this high-level overview. This section merely _outlines_ scenarios that could be addressed based on user-driven priorities.
 
 ##### Multiple activity implementations in a type
 
@@ -655,13 +685,28 @@ internal partial class UtterHelloStub : IActivityStub
 
 <small>Note: This case also applies when activities are wrapped into lambda expressions. Then, the implementing method is contained within a compiler-generated type that cannot be easily referenced by a `typeof()`-expression.</small>
 
-To support such scenarios, the `[ActivityStub]`-attribute may be specified using an :
-
 ```cs
 [ActivityStub(implementationSignature: typeof(Func<UtteranceInfo, Task>),
               ActivityTypeName="SayHello") ]
 internal partial class EquivalentUtterHelloStub : IActivityStub
 {
+}
+```
+
+##### Activity implementation developer wishes to create and publish a stub
+
+* Use an optional named parameter on the [`[ActivityImplementation]`-attribute](#define-an-activity-implementation) to generate a stub alongside the implementation.
+
+<small>Note: Specify `"."` as the stub type name to auto-generate the name to be `XxxStub`, where `Xxx` is the name of the implementation type.</small>
+
+```cs
+public static class Utterances
+{
+    [ActivityImplementation(ActivityStub="UtterancesInvokeStub")]
+    public static async Task SayHelloAsync(UtteranceInfo utteranceSpec)
+    {
+        // ...
+    }
 }
 ```
 
@@ -822,6 +867,14 @@ public async Task ParentWorkflowMainRoutine(IWorkflowContext workflowCtx)
     // ...
 }
 ```
+
+#### Additional workflow stub features
+
+A _detailed_ discussion of additional features are not in scope for this high-level overview. This section merely _outlines_ scenarios that could be addressed based on user-driven priorities.
+
+##### Workflow implementation developer wishes to create and publish a child stub
+
+Use the optional `ChildWorkflowStub`-property of the [`[WorkflowImplementation]`-attribute](#define-a-workflow-implementation) to generate stubs alongside the implementation. This was [discussed](#workflow-implementation-developer-wishes-to-create-and-publish-a-stub) in the section on client-side workflow invocation.  
 
 ## Worker host application
 
