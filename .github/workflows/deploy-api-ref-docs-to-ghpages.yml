@@ -25,7 +25,7 @@ jobs:
           path: sdk-dotnet
 
       - name: Setup .NET        
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v3
         with:  # We *target* and we *run tests on* different .NET versions, but we always build using the latest.
           dotnet-version: | 
             3.1.x
