@@ -71,12 +71,12 @@ jobs:
 
     steps:
       - name: Clone this repo (sdk-dotnet)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: sdk-dotnet
 
       - name: "Clone the 'temporalio/api' repo"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: temporalio/api
           path: api
@@ -109,7 +109,7 @@ jobs:
 
     steps:
       - name: Clone this repo (sdk-dotnet)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: sdk-dotnet
 
@@ -187,12 +187,12 @@ jobs:
 
     steps:
       - name: Clone this repo (sdk-dotnet)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: sdk-dotnet
 
       - name: "Clone the 'temporalio/api' repo"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: temporalio/api
           path: api
@@ -267,18 +267,18 @@ jobs:
 
     steps:
       - name: Clone this repo (sdk-dotnet)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: sdk-dotnet
 
       - name: "Clone the 'temporalio/api' repo"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: temporalio/api
           path: api
 
       - name: "Clone the 'macrogreg/temporal-dotnet-buildtools' repo"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: macrogreg/temporal-dotnet-buildtools
           path: temporal-dotnet-buildtools
